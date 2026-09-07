@@ -152,6 +152,10 @@
   #admin .adel{flex:0 0 auto;background:transparent;border:1px solid rgba(255,120,120,.5);color:#ff8b8b;
     border-radius:99px;padding:7px 13px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
   #admin .adel.on{border-color:rgba(120,255,180,.5);color:#7ef0b4}
+  #admin .alog{max-height:170px;overflow:auto;padding:10px 12px;background:#0b0c12;
+    border:1px solid var(--line);border-radius:12px;color:#9fe6bd;
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;line-height:1.5;
+    white-space:pre-wrap;word-break:break-word}
   #admin .amut{color:var(--muted);font-size:13px;margin:0 0 8px}
   #toast{position:fixed;left:50%;bottom:calc(112px + var(--safe-b));transform:translateX(-50%) translateY(10px);
     background:var(--ink-3);border:1px solid var(--line);color:var(--text);padding:10px 16px;border-radius:99px;
@@ -1044,15 +1048,19 @@ async function ghSha(path,tok){
     const j=await r.json();return j.sha||null;
   }catch(e){return null;}
 }
+const LOG=(m)=>{try{if(window.alog)window.alog(m);}catch(e){}};
 async function ghPut(path,contentB64,msg,tok){
+  LOG("yükleniyor: "+path+" ("+Math.round(contentB64.length*0.75/1024)+" KB)");
   const sha=await ghSha(path,tok);
   const body={message:msg,content:contentB64,branch:GH.branch};
   if(sha)body.sha=sha;
   const r=await fetch(ghUrl(path),{method:"PUT",headers:ghHead(tok),body:JSON.stringify(body)});
   if(!r.ok){
     let m="";try{m=(await r.json()).message||"";}catch(e){}
+    LOG("HATA "+r.status+" "+m+"  ("+path+")");
     throw new Error(r.status+" "+m);
   }
+  LOG("tamam: "+path);
   return true;
 }
 
@@ -1082,12 +1090,16 @@ function openAdmin(){
       '<input type="file" id="aFile" accept="image/*" hidden>'+
       '<input type="file" id="aFileP" accept="image/*" hidden>'+
       '<input type="file" id="aFileRow" accept="image/*" hidden>'+
+      '<input type="file" id="aFileRenk" accept="image/*" hidden>'+
       '<h5>Kategori sırası</h5>'+
       '<p class="amut">Sekmeler bu sırayla görünür. Listede olmayan kategoriler sona eklenir.</p>'+
       '<input class="af" id="aKat" placeholder="kategori adı">'+
       '<button class="abtn" id="aKatAdd">Kategori ekle</button>'+
       '<div id="aKats"></div>'+
       '<h5>Tüm resimler</h5><div id="aList"></div>'+
+      '<h5>İşlem kaydı</h5>'+
+      '<div id="aLog" class="alog">hazır.</div>'+
+      '<button class="abtn" id="aLogCopy">Kaydı kopyala</button>'+
       '<h5>katalog.json</h5>'+
       '<textarea id="aJson" readonly></textarea>'+
       '<button class="abtn" id="aCopy">Metni kopyala</button>'+
@@ -1100,6 +1112,13 @@ function openAdmin(){
     '</div>';
   document.body.appendChild(w);
 
+  const logSat=[];
+  window.alog=(m)=>{
+    const t=new Date().toLocaleTimeString("tr-TR");
+    logSat.push(t+"  "+m);
+    const el=w.querySelector("#aLog");
+    if(el){el.textContent=logSat.slice(-40).join("\n");el.scrollTop=el.scrollHeight;}
+  };
   const json=()=>JSON.stringify({kategoriler:draft.kategoriler,kategori:draft.kategori,
     ekle:draft.ekle,kaldir:draft.kaldir},null,2);
   /* bilinen tüm kategoriler */
@@ -1187,6 +1206,12 @@ function openAdmin(){
         kl.textContent=draft.ekle[row.i].kilit?"Kilitli 🔒":"Kilitle";
         kl.onclick=()=>{draft.ekle[row.i].kilit=!draft.ekle[row.i].kilit;paint();};
         nav.appendChild(kl);
+        const rk=document.createElement("button");
+        rk.className="amv wide";
+        rk.textContent="Renkli değiştir";
+        rk.title="Boyanacak renkli resmi yenisiyle değiştir";
+        rk.onclick=()=>{renkFor=row.i;w.querySelector("#aFileRenk").click();};
+        nav.appendChild(rk);
         const c=document.createElement("button");
         c.className="amv wide"+(draft.ekle[row.i].o?" on":"");
         c.textContent=draft.ekle[row.i].o?"Çizim ✓":"Çizim yükle";
@@ -1231,6 +1256,7 @@ function openAdmin(){
     w.querySelector("#aJson").value=json();
   }
   paint();
+  window.alog("panel açıldı — katalogdaki kayıt: "+draft.ekle.length);
 
   w.querySelector("#aKsel").onchange=()=>{
     const nw=w.querySelector("#aKsel").value==="__yeni";
@@ -1350,7 +1376,8 @@ function openAdmin(){
     const renkli=files.filter(f=>!cizimMi(f));
     const cizim={};
     files.filter(cizimMi).forEach(f=>{cizim[taban(f).replace(/-?[cç]izim$/i,"")]=f;});
-    if(!renkli.length){toast("Renkli resim seçilmedi");return;}
+    LOG("seçilen: "+files.length+" dosya | renkli: "+renkli.length+" | çizim: "+(files.length-renkli.length));
+    if(!renkli.length){LOG("HATA: renkli resim yok");toast("Renkli resim seçilmedi");return;}
     const sel=w.querySelector("#aKsel").value;
     const kat=(sel==="__yeni")?w.querySelector("#aK").value.trim():sel;
     let ok=0,hata=0,ilkHata="";
@@ -1376,7 +1403,9 @@ function openAdmin(){
         ok++;
       }catch(err){
         hata++;
-        if(!ilkHata)ilkHata=(err&&err.message)?err.message:String(err);
+        const m2=(err&&err.message)?err.message:String(err);
+        LOG("HATA ("+f.name+"): "+m2);
+        if(!ilkHata)ilkHata=m2;
       }
     }
     if(kat&&draft.kategoriler.indexOf(kat)<0&&!PRESETS.some(pp=>(pp.k||"Diğer")===kat))
@@ -1388,8 +1417,26 @@ function openAdmin(){
             "yazma değil, ya da anahtar bu depoyu kapsamıyor.");
       return;
     }
+    LOG("listeye eklendi: "+ok+" | taslak toplam: "+draft.ekle.length);
     toast(ok+" resim eklendi"+(hata?", "+hata+" tanesi olmadı: "+ilkHata:""));
     await publish();
+  };
+
+  let renkFor=-1;
+  w.querySelector("#aFileRenk").onchange=async e=>{
+    const f=e.target.files[0];e.target.value="";
+    if(!f||renkFor<0)return;
+    if(!tok()){toast("Önce erişim anahtarını yaz");return;}
+    const it=draft.ekle[renkFor];
+    busy(true,"Renkli resim değiştiriliyor…");
+    try{
+      const d=await shrink(f);
+      await store.set("admin:tok",tok());
+      await ghPut(GH.dir+"/"+it.id+".jpg",d.split(",")[1],"renkli: "+it.id,tok());
+      it.u=GH.site+GH.dir+"/"+it.id+".jpg?v="+Date.now().toString(36);
+      busy(false);paint();toast("Renkli resim değiştirildi");
+    }catch(err){busy(false);alert("Değiştirilemedi.\n\nHata: "+(err.message||err));}
+    renkFor=-1;
   };
 
   w.querySelector("#aFileRow").onchange=async e=>{
@@ -1415,6 +1462,7 @@ function openAdmin(){
     if(!tok()){toast("Erişim anahtarı gerekli");return;}
     pubBusy=true;
     setTimeout(()=>{pubBusy=false;},1500);
+    LOG("yayınlanıyor: katalog.json ("+draft.ekle.length+" kayıt)");
     busy(true,"Yayınlanıyor…");
     try{
       await store.set("admin:tok",tok());
@@ -1438,13 +1486,22 @@ function openAdmin(){
         }catch(e2){}
       }
       busy(false);
+      LOG(dogru?"katalog doğrulandı":"katalog doğrulanamadı");
       toast(dogru?"Yayınlandı ve doğrulandı"
                  :"Katalog yazıldı, yayına alınması birkaç dakika sürebilir");
-    }catch(err){busy(false);toast("Yayınlanamadı: "+(err.message||"bilinmeyen hata"));}
+    }catch(err){
+      busy(false);
+      LOG("YAYIN HATASI: "+(err.message||err));
+      toast("Yayınlanamadı: "+(err.message||"bilinmeyen hata"));
+    }
   }
   w.querySelector("#aPub").onclick=publish;
 
-  w.querySelector(".ax").onclick=()=>w.remove();
+  w.querySelector("#aLogCopy").onclick=async()=>{
+    try{await navigator.clipboard.writeText(logSat.join("\n"));toast("Kayıt kopyalandı");}
+    catch(e){toast("Kopyalanamadı, elle seç");}
+  };
+  w.querySelector(".ax").onclick=()=>{window.alog=null;w.remove();};
 }
 
 /* ---------- önizleme: karakalem dönüşümü ---------- */
@@ -1879,16 +1936,54 @@ function modeDisc(rad){
 function lineArtSegment(orig,flt){
   const N=W*H;
   const lc=document.createElement("canvas");lc.width=W;lc.height=H;
+  const stack=new Int32Array(N*2);
   const lx=lc.getContext("2d",{willReadFrequently:true});
   lx.fillStyle="#fff";lx.fillRect(0,0,W,H);
   lx.imageSmoothingQuality="high";lx.drawImage(lineImg,0,0,W,H);
   const ld=lx.getImageData(0,0,W,H).data;
 
-  const cizgi=new Uint8Array(N);
-  for(let i=0;i<N;i++){
-    const v=.299*ld[i*4]+.587*ld[i*4+1]+.114*ld[i*4+2];
-    cizgi[i]=v<140?1:0;
+  /* gri seviyesi + çizgi maskesi (delikler kapansın diye kalınlaştırılır) */
+  const gri=new Float32Array(N);
+  for(let i=0;i<N;i++)gri[i]=.299*ld[i*4]+.587*ld[i*4+1]+.114*ld[i*4+2];
+
+  const maskeYap=(esik,kalin)=>{
+    const m=new Uint8Array(N);
+    for(let i=0;i<N;i++)m[i]=gri[i]<esik?1:0;
+    for(let t=0;t<kalin;t++){
+      const c=Uint8Array.from(m);
+      for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+        const p=y*W+x;
+        if(c[p])continue;
+        if((x>0&&c[p-1])||(x<W-1&&c[p+1])||(y>0&&c[p-W])||(y<H-1&&c[p+W]))m[p]=1;
+      }
+    }
+    return m;
+  };
+
+  /* köşedeki alan resmin çoğunu yutuyorsa çizgi delinmiş demektir; sıkılaştır */
+  const denemeler=[[150,1],[185,1],[205,2],[225,2]];
+  let cizgi=null;
+  for(let d=0;d<denemeler.length;d++){
+    const m=maskeYap(denemeler[d][0],denemeler[d][1]);
+    /* köşeden hızlı doldurma ile sızıntı ölçümü */
+    const gor=new Uint8Array(N);
+    let bas=-1;
+    for(let i=0;i<N&&bas<0;i++)if(!m[i])bas=i;
+    if(bas<0)continue;
+    let sp=0,adet=0;
+    stack[sp++]=bas;gor[bas]=1;
+    while(sp>0){
+      const q=stack[--sp];adet++;
+      const x=q%W,y=(q-x)/W;
+      if(x>0&&!m[q-1]&&!gor[q-1]){gor[q-1]=1;stack[sp++]=q-1;}
+      if(x<W-1&&!m[q+1]&&!gor[q+1]){gor[q+1]=1;stack[sp++]=q+1;}
+      if(y>0&&!m[q-W]&&!gor[q-W]){gor[q-W]=1;stack[sp++]=q-W;}
+      if(y<H-1&&!m[q+W]&&!gor[q+W]){gor[q+W]=1;stack[sp++]=q+W;}
+    }
+    cizgi=m;
+    if(adet/N<0.45)break;      /* sızıntı yok, bu maske iyi */
   }
+  if(!cizgi)cizgi=maskeYap(185,1);
   /* renkli resmi paletle (bölgelerin rengi buradan gelir) */
   K=26;
   quantize(flt,orig);
@@ -1896,7 +1991,6 @@ function lineArtSegment(orig,flt){
 
   /* kapalı alanları etiketle: sınır yalnızca çizgi */
   let rid=new Int32Array(N).fill(-1);
-  const stack=new Int32Array(N*2);
   let say=0;
   for(let i=0;i<N;i++){
     if(cizgi[i]||rid[i]!==-1)continue;
