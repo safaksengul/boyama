@@ -563,7 +563,9 @@ async function renderGallery(){
       let tries=0;
       imel.onerror=()=>{
         tries++;
-        if(tries<4)setTimeout(()=>{if(imel.isConnected)imel.src=it.prev+"?r="+Date.now();},3500);
+        if(tries<4)setTimeout(()=>{
+          if(imel.isConnected)imel.src=it.prev+(it.prev.indexOf("?")<0?"?r=":"&r=")+Date.now();
+        },3500);
         else{imel.onerror=null;imel.src=it.d;applySketch(imel,it.d);}
       };
     }else applySketch(imel,it.d);
@@ -869,7 +871,7 @@ function openAdmin(){
     if(!f)return;
     busy(true,"Çizim yükleniyor…");
     try{
-      pend.o=await upload(f,"-cizim");
+      pend.o=(await upload(f,"-cizim"))+"?v="+Date.now().toString(36);
       busy(false);pendPaint();toast("Çizim yüklendi");
     }catch(err){busy(false);toast("Yüklenemedi: "+err.message);}
   };
@@ -898,7 +900,7 @@ function openAdmin(){
       const d=await shrink(f);
       await store.set("admin:tok",tok());
       await ghPut(GH.dir+"/"+it.id+"-cizim.jpg",d.split(",")[1],"çizim: "+it.id,tok());
-      it.o=GH.site+GH.dir+"/"+it.id+"-cizim.jpg";
+      it.o=GH.site+GH.dir+"/"+it.id+"-cizim.jpg?v="+Date.now().toString(36);
       busy(false);paint();toast("Çizim yüklendi");
     }catch(err){busy(false);toast("Yüklenemedi: "+err.message);}
     prevFor=-1;
