@@ -1474,23 +1474,23 @@ function openAdmin(){
               kmap:Object.assign({},draft.kategori)};
       await store.set("cat:data",remote);
       await renderGallery();
-      /* gerçekten yazıldı mı, kataloğu geri okuyup doğrula */
+      /* doğrulama: siteden değil, GitHub'ın kendisinden oku (gecikmesiz) */
       let dogru=false;
-      for(let d=0;d<3&&!dogru;d++){
-        await new Promise(r=>setTimeout(r,d?2500:800));
-        try{
-          const rr=await fetch(CATALOG_URL+"?v="+Date.now(),{cache:"no-store"});
-          if(rr.ok){
-            const jj=await rr.json();
-            const say=(jj.ekle||[]).length;
-            if(say>=draft.ekle.length)dogru=true;
-          }
-        }catch(e2){}
-      }
+      try{
+        const rr=await fetch(ghUrl("katalog.json")+"?ref="+GH.branch+"&t="+Date.now(),
+                             {headers:ghHead(tok()),cache:"no-store"});
+        if(rr.ok){
+          const jj=await rr.json();
+          const metin=decodeURIComponent(escape(atob((jj.content||"").replace(/\n/g,""))));
+          const veri=JSON.parse(metin);
+          dogru=(veri.ekle||[]).length===draft.ekle.length;
+        }
+      }catch(e2){}
       busy(false);
-      LOG(dogru?"katalog doğrulandı":"katalog doğrulanamadı");
-      toast(dogru?"Yayınlandı ve doğrulandı"
-                 :"Katalog yazıldı, yayına alınması birkaç dakika sürebilir");
+      LOG(dogru?"katalog doğrulandı ("+draft.ekle.length+" kayıt)"
+               :"katalog yazıldı, doğrulama okunamadı");
+      toast(dogru?"Yayınlandı — "+draft.ekle.length+" resim"
+                 :"Yayınlandı (sitede görünmesi 1-2 dakika sürebilir)");
     }catch(err){
       busy(false);
       LOG("YAYIN HATASI: "+(err.message||err));
