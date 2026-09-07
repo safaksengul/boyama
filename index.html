@@ -308,6 +308,7 @@
   #teklif .tbar{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.08)}
   #teklif .tbar i{display:block;height:100%;width:100%;
     background:linear-gradient(90deg,#ffd766,#e08a10)}
+  .hero[hidden]{display:none}
   #mineNote{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.5}
   #empty{color:var(--muted);font-size:14px;text-align:center;padding:40px 10px}
   .card .redo{position:absolute;left:8px;top:8px;width:28px;height:28px;border-radius:50%;
@@ -559,18 +560,35 @@ const acikMi=id=>isVip()||ent.acik.indexOf(id)>=0;
 async function loadEnt(){
   const e=await store.get("ent");
   if(e)ent={vipUntil:e.vipUntil||0,noads:!!e.noads,acik:e.acik||[]};
+  /* Mağaza köprüsü varsa doğrusu odur: cihazdaki kayıt kurcalanmış olabilir */
+  if(window.Billing&&typeof window.Billing.restore==="function"){
+    try{
+      const r=await window.Billing.restore();
+      if(r&&typeof r==="object"){
+        ent={vipUntil:Number(r.vipUntil)||0,noads:!!r.noads,
+             acik:Array.isArray(r.acik)?r.acik:[]};
+        await store.set("ent",ent);
+      }
+    }catch(e2){/* çevrimdışı: elimizdeki kayıtla devam */}
+  }
 }
 
 /* Kabuk uygulama (Google Play Faturalandırma) şunu tanımlar:
      window.Billing = { buy(sku){ return Promise<true|false>; },
                         restore(){ return Promise<{vipUntil,noads,acik}>; } }  */
+let buyBusy=false;
 async function buy(p,ctxId){
+  if(buyBusy)return;
+  buyBusy=true;
+  try{await buyDo(p,ctxId);}finally{buyBusy=false;}
+}
+async function buyDo(p,ctxId){
   let ok=false;
   if(window.Billing&&typeof window.Billing.buy==="function"){
     busy(true,"Mağazaya bağlanılıyor…");
     try{ok=await window.Billing.buy(p.sku);}catch(e){ok=false;}
     busy(false);
-  }else if(DENEME_MODU){
+  }else if(DENEME_MODU&&!window.Billing){
     ok=confirm("Deneme modu\n\n“"+p.ad+"” ("+p.fiyat+") satın alınmış sayılsın mı?");
   }else{toast("Mağaza şu an kullanılamıyor");return;}
   if(!ok){toast("Satın alma tamamlanmadı");return;}
@@ -623,6 +641,10 @@ function teklifGoster(){
   if(tkEl||$("#setup").style.display!=="none")return;
   if(document.getElementById("shop")||document.getElementById("admin"))return;
   if(document.querySelector(".sheetwrap"))return;
+  const dn=document.getElementById("done"),bz=document.getElementById("busy");
+  if(dn&&getComputedStyle(dn).display!=="none")return;
+  if(bz&&getComputedStyle(bz).display!=="none")return;
+  if(document.hidden)return;
   const t=teklifSec();
   if(!t)return;
   const p=SHOP.find(x=>x.sku===t.p);
@@ -659,7 +681,9 @@ function teklifBaslat(){
 function teklifDurdur(){clearTimeout(tkTimer);teklifKapat();}
 
 function openShop(ctxId){
+  teklifKapat();
   const w=document.createElement("div");
+  if(document.getElementById("shop"))return;
   w.id="shop";
   const vipTxt=isVip()
     ? "VIP üyeliğin "+new Date(ent.vipUntil).toLocaleDateString("tr-TR")+" tarihine kadar geçerli."
@@ -750,7 +774,12 @@ async function loadPrefs(){
 async function buildGallery(){
   await loadEnt();
   const it0=await store.get("items");
-  if(it0)items=it0;
+  if(it0&&typeof it0==="object"){
+    ["bulb","bucket","bomb"].forEach(k=>{
+      const v=Number(it0[k]);
+      items[k]=(isFinite(v)&&v>=0)?Math.min(v,999):items[k];
+    });
+  }
   await loadPrefs();
   await renderGallery();
   await loadCatalog();
@@ -780,8 +809,9 @@ async function allItems(){
 /* günün resmi: her gün sıradaki resme geçer */
 function setHero(list){
   const h=$("#hero");
-  let pool=list.filter(i=>!i.hid&&i.pct<100&&!i.own);
-  if(!pool.length)pool=list.filter(i=>!i.hid&&i.pct<100);
+  const serbest=i=>!i.hid&&i.pct<100&&!(i.kilit&&!acikMi(i.id));
+  let pool=list.filter(i=>serbest(i)&&!i.own);
+  if(!pool.length)pool=list.filter(serbest);
   if(!pool.length){h.hidden=true;return;}
   const it=pool[dayNo()%pool.length];
   h.hidden=false;
@@ -793,6 +823,9 @@ function setHero(list){
 }
 
 async function renderGallery(){
+  if(ent.vipUntil&&ent.vipUntil<=Date.now()&&ent.vipUntil!==-1){
+    ent.vipUntil=0;await store.set("ent",ent);
+  }
   const all=await allItems();
   setHero(all);
   const vis=all.filter(i=>!i.hid);
@@ -843,7 +876,7 @@ async function renderGallery(){
       let tries=0;
       imel.onerror=()=>{
         tries++;
-        if(tries<4)setTimeout(()=>{
+        if(tries<3)setTimeout(()=>{
           if(imel.isConnected)imel.src=it.prev+(it.prev.indexOf("?")<0?"?r=":"&r=")+Date.now();
         },3500);
         else{imel.onerror=null;imel.src=it.d;applySketch(imel,it.d);}
@@ -877,9 +910,19 @@ async function renderGallery(){
    sonra şifreyi gir. Şifreyi aşağıdan değiştir.
    Panel katalog metnini üretir; yayına almak için o metni kendi
    sunucundaki katalog.json dosyasının üzerine yazman gerekir.        */
-const ADMIN_PIN="5441";
-let adTaps=0,adTapT;
-(function(){
+const YONETICI_ACIK=true;   /* Play sürümünde false yaparsan panel hiç yüklenmez */
+/* Şifre düz metin durmasın diye karma olarak tutuluyor.
+   Yeni şifre belirlemek için tarayıcı konsoluna pinHash("yeniSifre") yaz,
+   çıkan sayıyı aşağıya yapıştır. Şu anki değer: 5441 */
+function pinHash(x){
+  let h=5381;
+  x=String(x);
+  for(let i=0;i<x.length;i++)h=((h*33)^x.charCodeAt(i))>>>0;
+  return h;
+}
+const ADMIN_PIN_HASH=pinHash("5441");
+let adTaps=0,adTapT,adFail=0,adBlok=0;
+if(YONETICI_ACIK)(function(){
   const h=$("#setup h1");
   if(!h)return;
   h.addEventListener("click",()=>{
@@ -887,9 +930,15 @@ let adTaps=0,adTapT;
     adTapT=setTimeout(()=>adTaps=0,900);
     if(adTaps>=5){
       adTaps=0;
+      if(Date.now()<adBlok){toast("Çok fazla denedin, biraz bekle");return;}
       const p=prompt("Yönetici şifresi:");
-      if(p===ADMIN_PIN)openAdmin();
-      else if(p!==null)toast("Şifre yanlış");
+      if(p===null)return;
+      if(pinHash(p)===ADMIN_PIN_HASH){adFail=0;openAdmin();}
+      else{
+        adFail++;
+        if(adFail>=3){adBlok=Date.now()+60000;adFail=0;toast("Bir dakika beklemen gerekiyor");}
+        else toast("Şifre yanlış");
+      }
     }
   });
 })();
@@ -925,6 +974,7 @@ function openAdmin(){
                kaldir:remote.kaldir.slice(),
                kategoriler:(remote.kats||[]).slice(),
                kategori:Object.assign({},remote.kmap||{})};
+  if(document.getElementById("admin"))return;
   const w=document.createElement("div");
   w.id="admin";
   w.innerHTML=
@@ -1073,6 +1123,9 @@ function openAdmin(){
       const nw=document.createElement("option");nw.value="__yeni";nw.textContent="＋ yeni kategori yaz";
       ks.appendChild(nw);
       if(keep)ks.value=keep;
+      if(!ks.value)ks.value="__yeni";
+      const box=w.querySelector("#aK");
+      if(box)box.hidden=ks.value!=="__yeni";
     }
     w.querySelector("#aJson").value=json();
   }
@@ -1163,6 +1216,7 @@ function openAdmin(){
   };
   w.querySelector("#aAdd").onclick=async()=>{
     if(!pend.u){toast("Önce renkli resmi seç");return;}
+    if(draft.ekle.some(x=>x.id===pend.id)){toast("Bu resim zaten listede");return;}
     const sel=w.querySelector("#aKsel").value;
     const k=(sel==="__yeni")?w.querySelector("#aK").value.trim():sel;
     const t=w.querySelector("#aT").value.trim()||"Resim";
@@ -1193,8 +1247,12 @@ function openAdmin(){
   };
 
   /* katalogu doğrudan depoya yaz */
+  let pubBusy=false;
   async function publish(){
+    if(pubBusy)return;
     if(!tok()){toast("Erişim anahtarı gerekli");return;}
+    pubBusy=true;
+    setTimeout(()=>{pubBusy=false;},1500);
     busy(true,"Yayınlanıyor…");
     try{
       await store.set("admin:tok",tok());
@@ -1328,7 +1386,9 @@ function sheet(title,opts,oncancel){
   requestAnimationFrame(()=>w.classList.add("on"));
 }
 function cardMenu(it){
-  const o=[{l:it.hid?"Gizlemeyi kaldır":"Galeriden gizle",fn:()=>toggleHide(it.id)}];
+  const o=[];
+  if(it.kilit&&!acikMi(it.id))o.push({l:"Bu resmi aç",fn:()=>openShop(it.id)});
+  o.push({l:it.hid?"Gizlemeyi kaldır":"Galeriden gizle",fn:()=>toggleHide(it.id)});
   if(it.pct>0)o.push({l:"Boyamayı sıfırla",fn:()=>redo(it.id,it.t)});
   if(it.own)o.push({l:"Resmi sil",danger:true,fn:()=>delMine(it.id,it.t)});
   sheet(it.t,o);
