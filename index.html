@@ -124,13 +124,15 @@
   #admin textarea{width:100%;height:190px;padding:12px;background:#0b0c12;border:1px solid var(--line);
     border-radius:12px;color:#b7f7d5;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.45}
   #admin .arow{display:flex;align-items:center;justify-content:space-between;gap:10px;
-    padding:11px 13px;margin-bottom:7px;background:var(--ink-2);border:1px solid var(--line);border-radius:12px}
+    flex-wrap:wrap;padding:11px 13px;margin-bottom:7px;background:var(--ink-2);
+    border:1px solid var(--line);border-radius:12px}
   #admin .agrp{margin:16px 0 8px;font-size:12px;font-weight:800;letter-spacing:.05em;
     color:var(--accent-2);text-transform:uppercase;
     border-bottom:1px solid var(--line);padding-bottom:6px}
   #admin .agrp:first-child{margin-top:4px}
   #admin .arow.off{opacity:.45}
-  #admin .arow span{font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #admin .arow>span{flex:1 1 130px;font-size:14px;font-weight:600;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #admin .ayeni{font-style:normal;font-size:9px;font-weight:800;letter-spacing:.06em;
     background:var(--accent-2);color:#1a0b33;border-radius:99px;padding:2px 6px;vertical-align:middle}
   #admin .arow i{display:block;font-style:normal;font-size:11px;color:var(--muted);font-weight:500;margin-top:2px}
@@ -139,7 +141,8 @@
   #admin .asel.wide{max-width:none;width:100%;padding:12px 14px;font-size:15px}
   #admin .arow2{display:flex;gap:8px;margin-bottom:9px}
   #admin .af.mini{margin:0;flex:1 1 40%}
-  #admin .anav{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+  #admin .anav{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;
+    gap:6px;flex:1 1 auto;min-width:0}
   #admin .amv{background:var(--ink-3);border:1px solid var(--line);color:var(--text);
     border-radius:9px;width:32px;height:30px;font-size:11px;font-family:inherit;cursor:pointer}
   #admin .amv.wide{width:auto;padding:0 10px;font-size:12px;font-weight:700}
@@ -219,35 +222,92 @@
   .sopt.danger{color:#ff8b8b}
   .sopt.cancel{text-align:center;background:transparent;color:var(--muted);margin-top:6px}
   .ghead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-  #btnShop{flex:0 0 auto;margin-top:4px;background:linear-gradient(180deg,#f7c948,#e0a21a);
-    border:0;color:#241a02;border-radius:99px;padding:10px 18px;font-family:inherit;
-    font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(224,162,26,.35)}
+  #btnShop{flex:0 0 auto;margin-top:4px;display:flex;align-items:center;gap:7px;
+    background:linear-gradient(135deg,#ffd766,#f0a91c 55%,#e08a10);
+    border:0;color:#2a1c02;border-radius:99px;padding:11px 19px;font-family:inherit;
+    font-size:14px;font-weight:800;cursor:pointer;position:relative;overflow:hidden;
+    box-shadow:0 6px 18px rgba(224,162,26,.42),inset 0 1px 0 rgba(255,255,255,.5)}
+  #btnShop::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;
+    background:linear-gradient(105deg,transparent,rgba(255,255,255,.65),transparent);
+    animation:shsh 4s ease-in-out infinite}
+  @keyframes shsh{0%{left:-60%}40%,100%{left:140%}}
   #btnShop:active{transform:scale(.96)}
-  .card .lockv{position:absolute;inset:0;background:rgba(6,7,12,.55);backdrop-filter:blur(1.5px);z-index:2}
+  #shopIc{display:flex}
+
+  .card .lockv{position:absolute;inset:0;background:rgba(6,7,12,.58);backdrop-filter:blur(1.5px);z-index:2}
   .card .lock{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;
-    font-style:normal;font-size:11px;font-weight:800;letter-spacing:.04em;color:#241a02;
-    background:linear-gradient(180deg,#f7c948,#e0a21a);border-radius:99px;padding:5px 11px;white-space:nowrap}
-  #shop{position:fixed;inset:0;z-index:65;background:var(--ink);display:flex;flex-direction:column}
+    font-style:normal;font-size:11px;font-weight:800;letter-spacing:.04em;color:#2a1c02;
+    background:linear-gradient(135deg,#ffd766,#e08a10);border-radius:99px;padding:5px 11px;
+    white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.5)}
+
+  #shop{position:fixed;inset:0;z-index:65;display:flex;flex-direction:column;
+    background:radial-gradient(120% 60% at 50% 0%,#3a2a10 0%,transparent 55%),var(--ink)}
   #shop .abar{display:flex;align-items:center;justify-content:space-between;
-    padding:calc(14px + var(--safe-t)) 16px 14px;border-bottom:1px solid var(--line);font-size:16px}
+    padding:calc(14px + var(--safe-t)) 16px 14px;border-bottom:1px solid var(--line)}
+  #shop .abar b{display:flex;align-items:center;gap:8px;font-size:17px;color:#f7c948}
   #shop .ax{background:var(--ink-3);border:1px solid var(--line);color:var(--text);
     border-radius:99px;padding:8px 16px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
   #shop .abody{flex:1;overflow-y:auto;padding:16px 16px calc(28px + var(--safe-b))}
   #shop .sdurum{margin:0 0 14px;padding:12px 14px;background:rgba(247,201,72,.12);
     border:1px solid rgba(247,201,72,.35);border-radius:12px;color:#f7c948;font-size:13px;line-height:1.5}
-  .scard{display:block;width:100%;text-align:left;margin:0 0 10px;padding:16px;
-    background:var(--ink-2);border:1px solid var(--line);border-radius:16px;
-    color:var(--text);font-family:inherit;cursor:pointer}
-  .scard:active{transform:scale(.99)}
-  .scard.one{border-color:rgba(247,201,72,.5);background:linear-gradient(180deg,rgba(247,201,72,.10),transparent)}
-  .scard .sad{display:block;font-size:16px;font-weight:800;margin-bottom:5px}
-  .scard .sac{display:block;font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:10px}
-  .scard .sfi{display:inline-block;background:var(--ink-3);border:1px solid var(--line);
-    border-radius:99px;padding:6px 14px;font-size:14px;font-weight:800}
-  .scard.one .sfi{background:linear-gradient(180deg,#f7c948,#e0a21a);border-color:transparent;color:#241a02}
-  #shop .abtn{display:block;width:100%;margin-top:14px;padding:13px;background:transparent;
+
+  .scard{position:relative;display:flex;align-items:flex-start;gap:13px;width:100%;
+    text-align:left;margin:0 0 12px;padding:16px 15px;background:var(--ink-2);
+    border:1px solid var(--line);border-radius:18px;color:var(--text);
+    font-family:inherit;cursor:pointer;overflow:hidden;transition:transform .15s,border-color .15s}
+  .scard:active{transform:scale(.985)}
+  .scard .sic{flex:0 0 auto;width:46px;height:46px;border-radius:14px;display:flex;
+    align-items:center;justify-content:center;background:var(--ink-3);
+    border:1px solid var(--line);color:var(--accent-2)}
+  .scard .sgv{flex:1 1 auto;min-width:0}
+  .scard .sad{display:block;font-size:16px;font-weight:800;margin-bottom:3px}
+  .scard .sac{display:block;font-size:12.5px;color:var(--muted);line-height:1.45}
+  .scard .soz{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+  .scard .soz em{font-style:normal;font-size:11px;font-weight:700;color:var(--text);
+    background:var(--ink-3);border:1px solid var(--line);border-radius:99px;padding:4px 9px}
+  .scard .sfi{flex:0 0 auto;align-self:center;text-align:center;
+    background:var(--ink-3);border:1px solid var(--line);border-radius:12px;
+    padding:9px 12px;font-size:15px;font-weight:800;line-height:1.15}
+  .scard .sfi i{display:block;font-style:normal;font-size:10px;font-weight:600;
+    color:var(--muted);margin-top:2px}
+  .scard .sroz{position:absolute;right:-30px;top:11px;transform:rotate(34deg);
+    background:#e0453c;color:#fff;font-size:9px;font-weight:900;letter-spacing:.07em;
+    padding:3px 32px;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+
+  .scard.one{border-color:rgba(247,201,72,.55);
+    background:linear-gradient(150deg,rgba(247,201,72,.16),rgba(247,201,72,.03) 60%,transparent),var(--ink-2);
+    box-shadow:0 10px 26px rgba(224,162,26,.18)}
+  .scard.one .sic{background:linear-gradient(135deg,#ffd766,#e08a10);border-color:transparent;color:#2a1c02}
+  .scard.one .sfi{background:linear-gradient(135deg,#ffd766,#e08a10);border-color:transparent;color:#2a1c02}
+  .scard.one .sfi i{color:rgba(42,28,2,.7)}
+  .scard.one .soz em{border-color:rgba(247,201,72,.4);color:#f7c948}
+
+  #shop .sfoot{margin:6px 2px 0;color:var(--muted);font-size:11.5px;line-height:1.5;text-align:center}
+  #shop .abtn{display:block;width:100%;margin-top:12px;padding:13px;background:transparent;
     border:1px solid var(--line);border-radius:12px;color:var(--muted);
     font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+  #teklif{position:fixed;left:12px;right:12px;bottom:calc(148px + var(--safe-b));z-index:28;
+    display:flex;align-items:center;gap:11px;padding:12px 13px 14px;
+    background:linear-gradient(150deg,rgba(247,201,72,.16),rgba(20,21,30,.96) 55%),rgba(20,21,30,.97);
+    border:1px solid rgba(247,201,72,.45);border-radius:16px;overflow:hidden;cursor:pointer;
+    box-shadow:0 14px 34px rgba(0,0,0,.55);
+    opacity:0;transform:translateY(22px) scale(.97);transition:opacity .28s,transform .28s}
+  #teklif.on{opacity:1;transform:none;animation:tkbob 2.6s ease-in-out .35s infinite}
+  @keyframes tkbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  #teklif .tic{flex:0 0 auto;width:40px;height:40px;border-radius:12px;display:flex;
+    align-items:center;justify-content:center;color:#2a1c02;
+    background:linear-gradient(135deg,#ffd766,#e08a10)}
+  #teklif .tgv{flex:1 1 auto;min-width:0}
+  #teklif .tgv b{display:block;font-size:14px;font-weight:800;color:#f7c948;margin-bottom:2px}
+  #teklif .tgv span{display:block;font-size:12px;color:var(--muted);line-height:1.4;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #teklif .tfi{flex:0 0 auto;background:linear-gradient(135deg,#ffd766,#e08a10);color:#2a1c02;
+    border-radius:99px;padding:7px 12px;font-size:13px;font-weight:800}
+  #teklif .tx{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:transparent;
+    border:1px solid var(--line);color:var(--muted);font-family:inherit;font-size:11px;cursor:pointer}
+  #teklif .tbar{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.08)}
+  #teklif .tbar i{display:block;height:100%;width:100%;
+    background:linear-gradient(90deg,#ffd766,#e08a10)}
   #mineNote{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.5}
   #empty{color:var(--muted);font-size:14px;text-align:center;padding:40px 10px}
   .card .redo{position:absolute;left:8px;top:8px;width:28px;height:28px;border-radius:50%;
@@ -353,7 +413,7 @@
       <h1>Sayılarla <em>Boyama</em></h1>
       <p class="sub">Bir resim seç, sırayla boya, rozetleri topla.</p>
     </div>
-    <button id="btnShop" title="Dükkân">Dükkân</button>
+    <button id="btnShop" title="Dükkân"><span id="shopIc"></span>Dükkân</button>
   </div>
   <button class="hero" id="hero"></button>
   <div id="tabs"></div>
@@ -466,23 +526,29 @@ const css=c=>"rgb("+c[0]+","+c[1]+","+c[2]+")";
         {kilitTek:true}    -> dokunulan kilitli resmi açar          */
 const DENEME_MODU=true;   /* Google Play'e çıkarken false yap */
 const SHOP=[
-  {sku:"vip_aylik", ad:"VIP Üyelik", fiyat:"10 $ / ay", one:true,
-   aciklama:"Bütün kilitli resimler açılır ve reklamlar kalkar. Her ay yenilenir.",
+  {sku:"vip_aylik", ad:"VIP Üyelik", fiyat:"10 $", ek:"/ ay", one:true, ikon:"tac",
+   rozet:"EN POPÜLER", aciklama:"Bütün kilitli resimler açılır, reklamlar kalkar.",
+   ozellik:["Tüm kilitli resimler","Reklam yok","Her ay yenilenir"],
    ver:{vipGun:30}},
-  {sku:"reklamsiz", ad:"Reklamsız — Sonsuza Kadar", fiyat:"20 $",
-   aciklama:"Reklamlar kalıcı olarak kapanır. Kilitli resimler dahil değildir.",
+  {sku:"reklamsiz", ad:"Reklamsız", fiyat:"20 $", ek:"tek sefer", ikon:"kalkan",
+   aciklama:"Reklamlar kalıcı olarak kapanır, bir daha ödeme yok.",
+   ozellik:["Sonsuza kadar","Kilitli resimler hariç"],
    ver:{noads:true}},
-  {sku:"paket_orta", ad:"Boya Paketi", fiyat:"5 $",
-   aciklama:"10 ipucu, 4 kova, 2 dinamit.",
-   ver:{bulb:10,bucket:4,bomb:2}},
-  {sku:"paket_kucuk", ad:"Küçük Paket", fiyat:"2 $",
-   aciklama:"3 ipucu, 1 kova, 1 dinamit. Denemek için.",
-   ver:{bulb:3,bucket:1,bomb:1}},
-  {sku:"paket_buyuk", ad:"Büyük Paket", fiyat:"12 $",
-   aciklama:"30 ipucu, 12 kova, 6 dinamit. Kutu başına en ucuzu.",
+  {sku:"paket_buyuk", ad:"Büyük Paket", fiyat:"12 $", ikon:"kutu",
+   rozet:"EN AVANTAJLI", aciklama:"Uzun süre yetecek kadar. Adedi en ucuz burada.",
+   ozellik:["30 ipucu","12 kova","6 dinamit"],
    ver:{bulb:30,bucket:12,bomb:6}},
-  {sku:"kilit_tek", ad:"Bu resmi aç", fiyat:"1 $", sadeceKilit:true,
+  {sku:"paket_orta", ad:"Boya Paketi", fiyat:"5 $", ikon:"kutu",
+   aciklama:"Takıldığın yerleri aşmak için dengeli bir paket.",
+   ozellik:["10 ipucu","4 kova","2 dinamit"],
+   ver:{bulb:10,bucket:4,bomb:2}},
+  {sku:"paket_kucuk", ad:"Küçük Paket", fiyat:"2 $", ikon:"kutu",
+   aciklama:"Denemek isteyenler için.",
+   ozellik:["3 ipucu","1 kova","1 dinamit"],
+   ver:{bulb:3,bucket:1,bomb:1}},
+  {sku:"kilit_tek", ad:"Bu resmi aç", fiyat:"1 $", sadeceKilit:true, ikon:"kilit",
    aciklama:"Yalnızca seçtiğin resmi kalıcı olarak açar.",
+   ozellik:["Tek resim","Kalıcı"],
    ver:{kilitTek:true}}
 ];
 
@@ -520,13 +586,85 @@ async function buy(p,ctxId){
   toast("Teşekkürler! "+p.ad+" etkin");
 }
 
+const SVG={
+ sepet:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.6"/><circle cx="18" cy="20" r="1.6"/><path d="M2.5 3h2.2l2.4 11.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.55L21.5 7H6"/></svg>',
+ tac:'<svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 18.5h18l1.2-11-5.4 4L12 3.5 7.2 11.5l-5.4-4Z" fill="currentColor"/><rect x="3" y="19.6" width="18" height="2.2" rx="1.1" fill="currentColor"/></svg>',
+ kalkan:'<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2.5 4 5.6v6.1c0 5 3.4 8.9 8 9.8 4.6-.9 8-4.8 8-9.8V5.6Z" fill="currentColor" opacity=".92"/><path d="M8.4 12.2l2.5 2.5 4.7-5" fill="none" stroke="#12131a" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+ kutu:'<svg viewBox="0 0 24 24" width="22" height="22"><path d="M3.2 7.6 12 3.4l8.8 4.2-8.8 4.2Z" fill="currentColor" opacity=".8"/><path d="M3.2 7.9v8.3L12 20.6v-8.4Z" fill="currentColor"/><path d="M20.8 7.9v8.3L12 20.6v-8.4Z" fill="currentColor" opacity=".6"/></svg>',
+ kilit:'<svg viewBox="0 0 24 24" width="22" height="22"><rect x="4.6" y="10.4" width="14.8" height="10.6" rx="2.6" fill="currentColor"/><path d="M8.2 10.2V8a3.8 3.8 0 0 1 7.6 0v2.2" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><circle cx="12" cy="15.4" r="1.7" fill="#12131a"/></svg>'
+};
+
+/* ---------- boyama sırasında çıkan kısa teklif ----------
+   ILK: ilk teklif kaç saniye sonra çıksın
+   ARA: sonraki teklifler arası en az kaç saniye
+   SURE: ekranda kaç saniye kalsın (çubuk bu sürede boşalır)      */
+const TEKLIF={ILK:75,ARA:210,SURE:5.5};
+let tkTimer=null,tkEl=null,tkSon=0;
+
+function teklifSec(){
+  const az=(items.bulb+items.bucket+items.bomb)<=2;
+  const list=[];
+  if(az)list.push({p:"paket_orta",b:"Takıldın mı?",m:"10 ipucu, 4 kova, 2 dinamit seni kurtarır."});
+  if(!isVip())list.push({p:"vip_aylik",b:"VIP ol",m:"Kilitli resimlerin hepsi açılsın, reklamlar kalksın."});
+  if(!adsOff())list.push({p:"reklamsiz",b:"Reklamsız boya",m:"Tek seferlik öde, bir daha reklam görme."});
+  if(!az)list.push({p:"paket_buyuk",b:"Cebin dolu olsun",m:"30 ipucu, 12 kova, 6 dinamit — adedi en ucuz."});
+  if(!list.length)return null;
+  return list[Math.floor(Math.random()*list.length)];
+}
+
+function teklifKapat(){
+  if(!tkEl)return;
+  const el=tkEl;tkEl=null;
+  el.classList.remove("on");
+  setTimeout(()=>el.remove(),320);
+}
+
+function teklifGoster(){
+  if(tkEl||$("#setup").style.display!=="none")return;
+  if(document.getElementById("shop")||document.getElementById("admin"))return;
+  if(document.querySelector(".sheetwrap"))return;
+  const t=teklifSec();
+  if(!t)return;
+  const p=SHOP.find(x=>x.sku===t.p);
+  if(!p)return;
+  tkSon=Date.now();
+  const w=document.createElement("div");
+  w.id="teklif";
+  w.innerHTML='<span class="tic">'+(SVG[p.ikon]||SVG.kutu)+'</span>'+
+    '<span class="tgv"><b>'+t.b+'</b><span>'+t.m+'</span></span>'+
+    '<span class="tfi">'+p.fiyat+'</span>'+
+    '<button class="tx" title="Kapat">✕</button>'+
+    '<span class="tbar"><i></i></span>';
+  document.body.appendChild(w);
+  tkEl=w;
+  requestAnimationFrame(()=>{
+    w.classList.add("on");
+    const bar=w.querySelector(".tbar i");
+    bar.style.transition="width "+TEKLIF.SURE+"s linear";
+    requestAnimationFrame(()=>{bar.style.width="0%";});
+  });
+  w.querySelector(".tx").onclick=e=>{e.stopPropagation();teklifKapat();};
+  w.onclick=()=>{teklifKapat();openShop(null);};
+  setTimeout(()=>{if(tkEl===w)teklifKapat();},TEKLIF.SURE*1000+320);
+}
+
+function teklifBaslat(){
+  clearTimeout(tkTimer);
+  const tik=()=>{
+    teklifGoster();
+    tkTimer=setTimeout(tik,TEKLIF.ARA*1000);
+  };
+  tkTimer=setTimeout(tik,TEKLIF.ILK*1000);
+}
+function teklifDurdur(){clearTimeout(tkTimer);teklifKapat();}
+
 function openShop(ctxId){
   const w=document.createElement("div");
   w.id="shop";
   const vipTxt=isVip()
     ? "VIP üyeliğin "+new Date(ent.vipUntil).toLocaleDateString("tr-TR")+" tarihine kadar geçerli."
     : (ent.noads?"Reklamlar kapalı. Kilitli resimler için VIP gerekiyor.":"");
-  w.innerHTML='<div class="abar"><b>Dükkân</b><button class="ax">Kapat</button></div>'+
+  w.innerHTML='<div class="abar"><b>'+SVG.sepet+' Dükkân</b><button class="ax">Kapat</button></div>'+
     '<div class="abody">'+(vipTxt?'<p class="sdurum">'+vipTxt+'</p>':'')+
     '<div id="sList"></div>'+
     '<button class="abtn" id="sRestore">Satın alımlarımı geri yükle</button></div>';
@@ -537,12 +675,20 @@ function openShop(ctxId){
     if(p.ver.noads&&adsOff())return;
     const c=document.createElement("button");
     c.className="scard"+(p.one?" one":"");
-    c.innerHTML='<span class="sad">'+p.ad+'</span>'+
-                '<span class="sac">'+p.aciklama+'</span>'+
-                '<span class="sfi">'+p.fiyat+'</span>';
+    const oz=(p.ozellik||[]).map(x=>'<em>'+x+'</em>').join("");
+    c.innerHTML=(p.rozet?'<span class="sroz">'+p.rozet+'</span>':'')+
+      '<span class="sic">'+(SVG[p.ikon]||SVG.kutu)+'</span>'+
+      '<span class="sgv"><span class="sad">'+p.ad+'</span>'+
+      '<span class="sac">'+p.aciklama+'</span>'+
+      (oz?'<span class="soz">'+oz+'</span>':'')+'</span>'+
+      '<span class="sfi">'+p.fiyat+(p.ek?'<i>'+p.ek+'</i>':'')+'</span>';
     c.onclick=async()=>{w.remove();await buy(p,ctxId);};
     L.appendChild(c);
   });
+  const foot=document.createElement("p");
+  foot.className="sfoot";
+  foot.textContent="Ödemeler Google Play üzerinden alınır. Aboneliği istediğin zaman iptal edebilirsin.";
+  L.parentNode.insertBefore(foot,w.querySelector("#sRestore"));
   w.querySelector("#sRestore").onclick=async()=>{
     if(!(window.Billing&&window.Billing.restore)){toast("Geri yükleme yalnızca uygulamada çalışır");return;}
     busy(true,"Kontrol ediliyor…");
@@ -1236,8 +1382,9 @@ function loadSrc(src,id){
   im.onerror=()=>{busy(false);toast("Resim indirilemedi, bağlantını kontrol et");};
   im.src=src;
 }
+$("#shopIc").innerHTML=SVG.sepet;
 $("#btnShop").onclick=()=>openShop(null);
-$("#btnNew").onclick=()=>{buildGallery();$("#setup").style.display="";};
+$("#btnNew").onclick=()=>{teklifDurdur();buildGallery();$("#setup").style.display="";};
 $("#file").onchange=async e=>{
   const f=e.target.files[0];e.target.value="";
   if(!f)return;
@@ -1333,6 +1480,7 @@ async function build(){
     manual=st.m||0;active=Math.min(st.a||0,K-1);
     restored=doneTasks>0&&doneTasks<totalTasks;
   }
+  teklifBaslat();
   buildSnapshot();rebuildTexture();buildPalette();
   updateTools();updateProgress();
 
