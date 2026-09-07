@@ -131,6 +131,8 @@
   #admin .anav{display:flex;align-items:center;gap:6px;flex:0 0 auto}
   #admin .amv{background:var(--ink-3);border:1px solid var(--line);color:var(--text);
     border-radius:9px;width:32px;height:30px;font-size:11px;font-family:inherit;cursor:pointer}
+  #admin .amv.wide{width:auto;padding:0 10px;font-size:12px;font-weight:700}
+  #admin .amv.on{border-color:var(--accent-2);color:var(--accent-2)}
   #admin .adel{flex:0 0 auto;background:transparent;border:1px solid rgba(255,120,120,.5);color:#ff8b8b;
     border-radius:99px;padding:7px 13px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
   #admin .adel.on{border-color:rgba(120,255,180,.5);color:#7ef0b4}
@@ -693,6 +695,14 @@ function openAdmin(){
         else draft.kategori[row.id]=v;
         paint();
       }));
+      if(row.tur==="uzak"){
+        const y=document.createElement("button");
+        y.className="amv wide"+(yeni?" on":"");
+        y.textContent=yeni?"Yeni ✓":"Yeni yap";
+        y.title=yeni?"Vitrinden çıkar":"7 gün Yeni bölümünde göster";
+        y.onclick=()=>{draft.ekle[row.i].e=yeni?0:Date.now();paint();};
+        nav.appendChild(y);
+      }
       const b=document.createElement("button");
       if(row.tur==="uzak"){
         b.className="adel";b.textContent="Sil";
