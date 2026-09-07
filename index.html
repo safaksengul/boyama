@@ -131,6 +131,8 @@
     border-bottom:1px solid var(--line);padding-bottom:6px}
   #admin .agrp:first-child{margin-top:4px}
   #admin .arow.off{opacity:.45}
+  #admin .arow>span.aad{cursor:pointer;text-decoration:underline;text-decoration-style:dotted;
+    text-underline-offset:3px;text-decoration-color:var(--muted)}
   #admin .arow>span{flex:1 1 130px;font-size:14px;font-weight:600;min-width:0;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #admin .ayeni{font-style:normal;font-size:9px;font-weight:800;letter-spacing:.06em;
@@ -1163,6 +1165,15 @@ function openAdmin(){
       const r=document.createElement("div");r.className="arow"+(off?" off":"");
       r.innerHTML='<span>'+row.t+(yeni?' <em class="ayeni">YENİ</em>':'')+
         '<i>'+row.tur+' · '+row.id+'</i></span>';
+      if(row.tur==="uzak"){
+        const ad=r.querySelector("span");
+        ad.classList.add("aad");
+        ad.title="Adı değiştir";
+        ad.onclick=()=>{
+          const y=(prompt("Resmin adı:",row.t)||"").trim().slice(0,40);
+          if(y){draft.ekle[row.i].t=y;paint();}
+        };
+      }
       const nav=document.createElement("div");nav.className="anav";
       nav.appendChild(catSelect(row.cat,v=>{
         if(row.tur==="uzak")draft.ekle[row.i].k=v;
