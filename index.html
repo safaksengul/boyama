@@ -262,6 +262,7 @@
   .scard .sgv{flex:1 1 auto;min-width:0}
   .scard .sad{display:block;font-size:16px;font-weight:800;margin-bottom:3px}
   .scard .sac{display:block;font-size:12.5px;color:var(--muted);line-height:1.45}
+  .scard .salt{display:block;margin-top:6px;font-size:12px;font-weight:800;color:#f7c948}
   .scard .soz{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
   .scard .soz em{font-style:normal;font-size:11px;font-weight:700;color:var(--text);
     background:var(--ink-3);border:1px solid var(--line);border-radius:99px;padding:4px 9px}
@@ -308,6 +309,8 @@
   #teklif .tbar{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.08)}
   #teklif .tbar i{display:block;height:100%;width:100%;
     background:linear-gradient(90deg,#ffd766,#e08a10)}
+  .card.own.kilitliEk{border-color:rgba(247,201,72,.5);background:rgba(247,201,72,.07);color:#f7c948}
+  .card.own.kilitliEk b{color:#f7c948;font-size:20px}
   .hero[hidden]{display:none}
   #mineNote{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.5}
   #empty{color:var(--muted);font-size:14px;text-align:center;padding:40px 10px}
@@ -527,46 +530,109 @@ const css=c=>"rgb("+c[0]+","+c[1]+","+c[2]+")";
         {kilitTek:true}    -> dokunulan kilitli resmi açar          */
 const DENEME_MODU=true;   /* Google Play'e çıkarken false yap */
 const SHOP=[
-  {sku:"vip_aylik", ad:"VIP Üyelik", fiyat:"10 $", ek:"/ ay", one:true, ikon:"tac",
-   rozet:"EN POPÜLER", aciklama:"Bütün kilitli resimler açılır, reklamlar kalkar.",
-   ozellik:["Tüm kilitli resimler","Reklam yok","Her ay yenilenir"],
+  {sku:"vip_yillik", ad:"VIP Yıllık", fiyat:"39,99 $", ek:"/ yıl", one:true, ikon:"tac",
+   rozet:"%58 TASARRUF", alt:"ayda yalnızca 3,33 $",
+   aciklama:"Aylık plana göre yılda 56 dolar daha ucuz.",
+   ozellik:["İlk 3 gün ücretsiz","Tüm kilitli resimler","Reklam yok","Kendi resimlerin"],
+   ver:{vipGun:365}},
+  {sku:"vip_aylik", ad:"VIP Aylık", fiyat:"7,99 $", ek:"/ ay", ikon:"tac",
+   aciklama:"Bütün kilitli resimler açılır, reklamlar kalkar.",
+   ozellik:["İlk 3 gün ücretsiz","Tüm kilitli resimler","Reklam yok","Kendi resimlerin"],
    ver:{vipGun:30}},
-  {sku:"reklamsiz", ad:"Reklamsız", fiyat:"20 $", ek:"tek sefer", ikon:"kalkan",
+  {sku:"reklamsiz", ad:"Reklamsız", fiyat:"9,99 $", ek:"tek sefer", ikon:"kalkan",
    aciklama:"Reklamlar kalıcı olarak kapanır, bir daha ödeme yok.",
    ozellik:["Sonsuza kadar","Kilitli resimler hariç"],
    ver:{noads:true}},
-  {sku:"paket_buyuk", ad:"Büyük Paket", fiyat:"12 $", ikon:"kutu",
+  {sku:"kendi_resim", ad:"Kendi Resimlerin", fiyat:"2,99 $", ikon:"foto",
+   aciklama:"Telefonundaki istediğin fotoğrafı boyamaya dönüştür, sınırsız.",
+   ozellik:["Sınırsız resim","Kalıcı","VIP'e dahil"],
+   ver:{kendi:true}},
+  {sku:"paket_buyuk", ad:"Büyük Paket", fiyat:"9,99 $", ikon:"kutu",
    rozet:"EN AVANTAJLI", aciklama:"Uzun süre yetecek kadar. Adedi en ucuz burada.",
    ozellik:["30 ipucu","12 kova","6 dinamit"],
    ver:{bulb:30,bucket:12,bomb:6}},
-  {sku:"paket_orta", ad:"Boya Paketi", fiyat:"5 $", ikon:"kutu",
+  {sku:"paket_orta", ad:"Boya Paketi", fiyat:"4,99 $", ikon:"kutu",
    aciklama:"Takıldığın yerleri aşmak için dengeli bir paket.",
    ozellik:["10 ipucu","4 kova","2 dinamit"],
    ver:{bulb:10,bucket:4,bomb:2}},
-  {sku:"paket_kucuk", ad:"Küçük Paket", fiyat:"2 $", ikon:"kutu",
+  {sku:"paket_kucuk", ad:"Küçük Paket", fiyat:"1,99 $", ikon:"kutu",
    aciklama:"Denemek isteyenler için.",
    ozellik:["3 ipucu","1 kova","1 dinamit"],
    ver:{bulb:3,bucket:1,bomb:1}},
-  {sku:"kilit_tek", ad:"Bu resmi aç", fiyat:"1 $", sadeceKilit:true, ikon:"kilit",
+  {sku:"kilit_tek", ad:"Bu resmi aç", fiyat:"0,99 $", sadeceKilit:true, ikon:"kilit",
    aciklama:"Yalnızca seçtiğin resmi kalıcı olarak açar.",
    ozellik:["Tek resim","Kalıcı"],
    ver:{kilitTek:true}}
 ];
 
-let ent={vipUntil:0,noads:false,acik:[]};
+const FREE_KENDI=1;   /* ücretsiz eklenebilecek kendi resmi sayısı */
+/* Bölgeye göre gösterilecek fiyatlar.
+   Google Play bağlandığında fiyatlar oradan okunur ve bu tablo devre dışı kalır;
+   burada yazanlar yalnızca gösterim içindir, gerçek tahsilat Play'in fiyatıyla olur.
+   Play Console'da Türkiye fiyatlarını buradakilerle aynı gir.                 */
+const YEREL_FIYAT={
+  TR:{
+    vip_yillik :{f:"599,99 ₺", ek:"/ yıl", rozet:"%50 TASARRUF", alt:"ayda yalnızca 50 ₺"},
+    vip_aylik  :{f:"99,99 ₺",  ek:"/ ay"},
+    reklamsiz  :{f:"199,99 ₺", ek:"tek sefer"},
+    kendi_resim:{f:"79,99 ₺"},
+    paket_buyuk:{f:"199,99 ₺"},
+    paket_orta :{f:"99,99 ₺"},
+    paket_kucuk:{f:"39,99 ₺"},
+    kilit_tek  :{f:"24,99 ₺"}
+  }
+};
+function bolge(){
+  try{
+    const l=(navigator.language||"").replace("_","-");
+    const m=l.match(/-([A-Za-z]{2})$/);
+    if(m)return m[1].toUpperCase();
+    return l.slice(0,2).toLowerCase()==="tr"?"TR":"";
+  }catch(e){return "";}
+}
+let playFiyat=null;   /* Play'den gelen gerçek fiyatlar */
+function yerelKayit(p){const t=YEREL_FIYAT[bolge()];return (t&&t[p.sku])||null;}
+function fiyatOf(p){
+  if(playFiyat&&playFiyat[p.sku])return playFiyat[p.sku];
+  const y=yerelKayit(p);
+  return y&&y.f?y.f:p.fiyat;
+}
+function ekOf(p){
+  if(playFiyat&&playFiyat[p.sku])return p.ek||"";
+  const y=yerelKayit(p);
+  return (y&&y.ek!==undefined)?y.ek:(p.ek||"");
+}
+function altOf(p){
+  const y=yerelKayit(p);
+  return (y&&y.alt)?y.alt:(p.alt||"");
+}
+function rozetOf(p){
+  const y=yerelKayit(p);
+  return (y&&y.rozet)?y.rozet:(p.rozet||"");
+}
+async function fiyatlariCek(){
+  if(!(window.Billing&&typeof window.Billing.prices==="function"))return;
+  try{
+    const r=await window.Billing.prices();
+    if(r&&typeof r==="object")playFiyat=r;
+  }catch(e){}
+}
+
+let ent={vipUntil:0,noads:false,acik:[],kendi:false};
 const isVip=()=>ent.vipUntil>Date.now();
 const adsOff=()=>ent.noads||isVip();
 const acikMi=id=>isVip()||ent.acik.indexOf(id)>=0;
+const kendiSinirsiz=()=>isVip()||!!ent.kendi;
 async function loadEnt(){
   const e=await store.get("ent");
-  if(e)ent={vipUntil:e.vipUntil||0,noads:!!e.noads,acik:e.acik||[]};
+  if(e)ent={vipUntil:e.vipUntil||0,noads:!!e.noads,acik:e.acik||[],kendi:!!e.kendi};
   /* Mağaza köprüsü varsa doğrusu odur: cihazdaki kayıt kurcalanmış olabilir */
   if(window.Billing&&typeof window.Billing.restore==="function"){
     try{
       const r=await window.Billing.restore();
       if(r&&typeof r==="object"){
         ent={vipUntil:Number(r.vipUntil)||0,noads:!!r.noads,
-             acik:Array.isArray(r.acik)?r.acik:[]};
+             acik:Array.isArray(r.acik)?r.acik:[],kendi:!!r.kendi};
         await store.set("ent",ent);
       }
     }catch(e2){/* çevrimdışı: elimizdeki kayıtla devam */}
@@ -589,12 +655,13 @@ async function buyDo(p,ctxId){
     try{ok=await window.Billing.buy(p.sku);}catch(e){ok=false;}
     busy(false);
   }else if(DENEME_MODU&&!window.Billing){
-    ok=confirm("Deneme modu\n\n“"+p.ad+"” ("+p.fiyat+") satın alınmış sayılsın mı?");
+    ok=confirm("Deneme modu\n\n“"+p.ad+"” ("+fiyatOf(p)+") satın alınmış sayılsın mı?");
   }else{toast("Mağaza şu an kullanılamıyor");return;}
   if(!ok){toast("Satın alma tamamlanmadı");return;}
   const v=p.ver;
   if(v.vipGun)ent.vipUntil=Math.max(ent.vipUntil,Date.now())+v.vipGun*864e5;
   if(v.noads)ent.noads=true;
+  if(v.kendi)ent.kendi=true;
   if(v.kilitTek&&ctxId&&ent.acik.indexOf(ctxId)<0)ent.acik.push(ctxId);
   ["bulb","bucket","bomb"].forEach(k=>{if(v[k])items[k]=(items[k]||0)+v[k];});
   await store.set("ent",ent);
@@ -609,6 +676,7 @@ const SVG={
  tac:'<svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 18.5h18l1.2-11-5.4 4L12 3.5 7.2 11.5l-5.4-4Z" fill="currentColor"/><rect x="3" y="19.6" width="18" height="2.2" rx="1.1" fill="currentColor"/></svg>',
  kalkan:'<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2.5 4 5.6v6.1c0 5 3.4 8.9 8 9.8 4.6-.9 8-4.8 8-9.8V5.6Z" fill="currentColor" opacity=".92"/><path d="M8.4 12.2l2.5 2.5 4.7-5" fill="none" stroke="#12131a" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>',
  kutu:'<svg viewBox="0 0 24 24" width="22" height="22"><path d="M3.2 7.6 12 3.4l8.8 4.2-8.8 4.2Z" fill="currentColor" opacity=".8"/><path d="M3.2 7.9v8.3L12 20.6v-8.4Z" fill="currentColor"/><path d="M20.8 7.9v8.3L12 20.6v-8.4Z" fill="currentColor" opacity=".6"/></svg>',
+ foto:'<svg viewBox="0 0 24 24" width="22" height="22"><rect x="2.6" y="5.4" width="18.8" height="14.2" rx="3" fill="currentColor"/><circle cx="12" cy="12.5" r="3.6" fill="#12131a"/><rect x="8.4" y="3.4" width="7.2" height="3" rx="1.5" fill="currentColor"/></svg>',
  kilit:'<svg viewBox="0 0 24 24" width="22" height="22"><rect x="4.6" y="10.4" width="14.8" height="10.6" rx="2.6" fill="currentColor"/><path d="M8.2 10.2V8a3.8 3.8 0 0 1 7.6 0v2.2" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><circle cx="12" cy="15.4" r="1.7" fill="#12131a"/></svg>'
 };
 
@@ -623,7 +691,7 @@ function teklifSec(){
   const az=(items.bulb+items.bucket+items.bomb)<=2;
   const list=[];
   if(az)list.push({p:"paket_orta",b:"Takıldın mı?",m:"10 ipucu, 4 kova, 2 dinamit seni kurtarır."});
-  if(!isVip())list.push({p:"vip_aylik",b:"VIP ol",m:"Kilitli resimlerin hepsi açılsın, reklamlar kalksın."});
+  if(!isVip())list.push({p:"vip_yillik",b:"VIP ol, 3 gün ücretsiz",m:"Kilitli resimler açılır, reklamlar kalkar."});
   if(!adsOff())list.push({p:"reklamsiz",b:"Reklamsız boya",m:"Tek seferlik öde, bir daha reklam görme."});
   if(!az)list.push({p:"paket_buyuk",b:"Cebin dolu olsun",m:"30 ipucu, 12 kova, 6 dinamit — adedi en ucuz."});
   if(!list.length)return null;
@@ -654,7 +722,7 @@ function teklifGoster(){
   w.id="teklif";
   w.innerHTML='<span class="tic">'+(SVG[p.ikon]||SVG.kutu)+'</span>'+
     '<span class="tgv"><b>'+t.b+'</b><span>'+t.m+'</span></span>'+
-    '<span class="tfi">'+p.fiyat+'</span>'+
+    '<span class="tfi">'+fiyatOf(p)+'</span>'+
     '<button class="tx" title="Kapat">✕</button>'+
     '<span class="tbar"><i></i></span>';
   document.body.appendChild(w);
@@ -700,12 +768,14 @@ function openShop(ctxId){
     const c=document.createElement("button");
     c.className="scard"+(p.one?" one":"");
     const oz=(p.ozellik||[]).map(x=>'<em>'+x+'</em>').join("");
-    c.innerHTML=(p.rozet?'<span class="sroz">'+p.rozet+'</span>':'')+
+    const roz=rozetOf(p);
+    c.innerHTML=(roz?'<span class="sroz">'+roz+'</span>':'')+
       '<span class="sic">'+(SVG[p.ikon]||SVG.kutu)+'</span>'+
       '<span class="sgv"><span class="sad">'+p.ad+'</span>'+
       '<span class="sac">'+p.aciklama+'</span>'+
+      (altOf(p)?'<span class="salt">'+altOf(p)+'</span>':'')+
       (oz?'<span class="soz">'+oz+'</span>':'')+'</span>'+
-      '<span class="sfi">'+p.fiyat+(p.ek?'<i>'+p.ek+'</i>':'')+'</span>';
+      '<span class="sfi">'+fiyatOf(p)+(ekOf(p)?'<i>'+ekOf(p)+'</i>':'')+'</span>';
     c.onclick=async()=>{w.remove();await buy(p,ctxId);};
     L.appendChild(c);
   });
@@ -773,6 +843,7 @@ async function loadPrefs(){
 }
 async function buildGallery(){
   await loadEnt();
+  await fiyatlariCek();
   const it0=await store.get("items");
   if(it0&&typeof it0==="object"){
     ["bulb","bucket","bomb"].forEach(k=>{
@@ -860,7 +931,17 @@ async function renderGallery(){
              pub.filter(i=>tab==="all"||i.cat===tab);
   const g=$("#gallery");g.innerHTML="";
   const note=$("#mineNote");
-  if(note)note.hidden=tab!=="mine";
+  if(note){
+    note.hidden=tab!=="mine";
+    if(tab==="mine"){
+      const kalan=Math.max(0,FREE_KENDI-(all.filter(i=>i.own&&i.pct<100).length));
+      note.textContent=kendiSinirsiz()
+        ? "Sınırsız hakkın var. Eklediğin resimler yalnızca bu cihazda kalır, kimseyle paylaşılmaz."
+        : (kalan>0
+           ? "Ücretsiz "+kalan+" resim ekleyebilirsin. Eklediklerin yalnızca bu cihazda kalır."
+           : "Ücretsiz hakkını kullandın. Dükkândan sınırsız hakkı açabilirsin.");
+    }
+  }
   list.forEach(it=>{
     const b=document.createElement("button");
     b.className="card"+(it.pct>=100?" fin":"")+(it.hid?" hid":"");
@@ -891,9 +972,14 @@ async function renderGallery(){
   });
   if(tab==="mine"){
     const own=document.createElement("button");
-    own.className="card own";
-    own.innerHTML='<b>+</b>Resim ekle';
-    own.onclick=()=>$("#file").click();
+    const kalan=Math.max(0,FREE_KENDI-mine.length);
+    const acik=kendiSinirsiz()||kalan>0;
+    own.className="card own"+(acik?"":" kilitliEk");
+    own.innerHTML=acik?'<b>+</b>Resim ekle':'<b>🔒</b>Sınırsız aç';
+    own.onclick=()=>{
+      if(acik)$("#file").click();
+      else openShop(null);
+    };
     g.appendChild(own);
   }
   const em=$("#empty");
@@ -1448,6 +1534,7 @@ $("#btnNew").onclick=()=>{teklifDurdur();buildGallery();$("#setup").style.displa
 $("#file").onchange=async e=>{
   const f=e.target.files[0];e.target.value="";
   if(!f)return;
+  if(!kendiSinirsiz()&&(await myList()).length>=FREE_KENDI){openShop(null);return;}
   busy(true,"Resim ekleniyor…");
   try{
     const d=await shrink(f);
