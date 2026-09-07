@@ -629,7 +629,8 @@ async function ghPut(path,contentB64,msg,tok){
 }
 
 function openAdmin(){
-  const draft={ekle:remote.ekle.map(x=>({id:x.id.replace(/^r/,""),t:x.t,k:x.k,u:x.u,p:x.p})),
+  const draft={ekle:remote.ekle.map(x=>({id:x.id.replace(/^r/,""),t:x.t,k:x.k,u:x.u,
+                                        o:x.o||"",p:x.p,e:x.e||0})),
                kaldir:remote.kaldir.slice(),
                kategoriler:(remote.kats||[]).slice(),
                kategori:Object.assign({},remote.kmap||{})};
