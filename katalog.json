@@ -2,7 +2,8 @@
   "kategoriler": [
     "Fantastik",
     "Savaşcı",
-    "Araba"
+    "Araba",
+    "Hayvan"
   ],
   "kategori": {},
   "ekle": [
@@ -25,6 +26,16 @@
       "kilit": false,
       "p": "50% 25%",
       "e": 1788812353988
+    },
+    {
+      "id": "hayvan-01-dn9z",
+      "t": "hayvan 01",
+      "k": "Fantastik",
+      "u": "https://safaksengul.github.io/boyama/resim/hayvan-01-dn9z.jpg",
+      "o": "https://safaksengul.github.io/boyama/resim/hayvan-01-dn9z-cizim.jpg?v=mtrrdr5i",
+      "kilit": false,
+      "p": "50% 25%",
+      "e": 1788816875958
     }
   ],
   "kaldir": []
