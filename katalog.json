@@ -11,16 +11,17 @@
       "k": "Fantastik",
       "u": "https://safaksengul.github.io/boyama/resim/rmtrhoec3.jpg",
       "p": "50% 25%",
-      "e": 0
+      "o": "https://safaksengul.github.io/boyama/resim/rmtrhoec3-cizim.jpg",
+      "e": 1788801888430
     },
     {
       "id": "rmtricm8b",
       "t": "Savaşcı Kadın",
       "k": "Savaşcı",
       "u": "https://safaksengul.github.io/boyama/resim/rmtricm8b.jpg",
-      "o": "https://safaksengul.github.io/boyama/resim/rmtricm8b-cizim.jpg",
       "p": "50% 25%",
-      "e": 1788801755358
+      "o": "https://safaksengul.github.io/boyama/resim/rmtricm8b-cizim.jpg",
+      "e": 1788801876448
     }
   ],
   "kaldir": []
