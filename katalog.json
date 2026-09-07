@@ -1,7 +1,8 @@
 {
   "kategoriler": [
     "Fantastik",
-    "Savaşcı"
+    "Savaşcı",
+    "Araba"
   ],
   "kategori": {},
   "ekle": [
@@ -28,7 +29,7 @@
     {
       "id": "araba-01-zy9d",
       "t": "araba 01",
-      "k": "Fantastik",
+      "k": "Araba",
       "u": "https://safaksengul.github.io/boyama/resim/araba-01-zy9d.jpg",
       "o": "https://safaksengul.github.io/boyama/resim/araba-01-zy9d-cizim.jpg?v=mtrn02j6",
       "kilit": false,
