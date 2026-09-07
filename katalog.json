@@ -1,9 +1,16 @@
 {
-  "kategoriler": [],
-
-  "kategori": {},
-
-  "ekle": [],
-
+  "kategoriler": [
+    "Yeni",
+    "Araba"
+  ],
+  "ekle": [
+    {
+      "id": "resimmtr9sizw",
+      "t": "lamborghini",
+      "k": "Yeni",
+      "u": "https://safaksengul.github.io/boyama/resim/resimmtr9sizw.jpg",
+      "p": "50% 25%"
+    }
+  ],
   "kaldir": []
 }
