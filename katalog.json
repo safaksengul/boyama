@@ -1,16 +1,9 @@
 {
-  "kategoriler": [
-    "Araba"
-  ],
+  "kategoriler": [],
+
   "kategori": {},
-  "ekle": [
-    {
-      "id": "resimmtrablog",
-      "t": "lamborghini",
-      "k": "Araba",
-      "u": "https://safaksengul.github.io/boyama/resim/resimmtrablog.jpg",
-      "p": "50% 25%"
-    }
-  ],
+
+  "ekle": [],
+
   "kaldir": []
 }
