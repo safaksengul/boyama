@@ -423,7 +423,7 @@ async function loadCatalog(){
   try{
     const ctl=new AbortController();
     const tm=setTimeout(()=>ctl.abort(),7000);
-    const url=CATALOG_URL+(CATALOG_URL.indexOf("?")<0?"?v=":"&v=")+Math.floor(Date.now()/6e5);
+    const url=CATALOG_URL+(CATALOG_URL.indexOf("?")<0?"?v=":"&v=")+Date.now();
     const r=await fetch(url,{signal:ctl.signal,cache:"no-store"});
     clearTimeout(tm);
     if(!r.ok)return;
