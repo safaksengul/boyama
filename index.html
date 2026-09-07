@@ -1924,42 +1924,77 @@ function lineArtSegment(orig){
   }
   for(let i=0;i<N;i++)if(rid[i]<0)rid[i]=0;
 
-  /* küçük parçaları en çok komşu olduğu bölgeye kat */
-  const minAlan=Math.max(60,Math.round(N/6000));
-  for(let tur=0;tur<3;tur++){
-    const boy=new Int32Array(say);
-    for(let i=0;i<N;i++)boy[rid[i]]++;
-    const komsu=new Map();
-    let degisti=false;
-    const hedef=new Int32Array(say).fill(-1);
-    for(let i=0;i<N;i++){
-      const a=rid[i];
-      if(boy[a]>=minAlan)continue;
-      const x=i%W,y=(i-x)/W;
-      const bak=b=>{
-        if(b===a)return;
-        const k=a*1e6+b;
-        komsu.set(k,(komsu.get(k)||0)+1);
-      };
-      if(x>0)bak(rid[i-1]);
-      if(x<W-1)bak(rid[i+1]);
-      if(y>0)bak(rid[i-W]);
-      if(y<H-1)bak(rid[i+W]);
-    }
-    const enIyi=new Map();
-    komsu.forEach((v,k)=>{
-      const a=Math.floor(k/1e6),b=k%1e6;
-      const cur=enIyi.get(a);
-      if(!cur||v>cur[1])enIyi.set(a,[b,v]);
-    });
-    enIyi.forEach((v,a)=>{if(boy[a]<minAlan){hedef[a]=v[0];degisti=true;}});
-    if(!degisti)break;
-    for(let i=0;i<N;i++){
-      let a=rid[i],guard=0;
-      while(hedef[a]>=0&&hedef[a]!==a&&guard++<6)a=hedef[a];
-      rid[i]=a;
+  /* --- komşuluk haritası --- */
+  const par=new Int32Array(say);
+  for(let i=0;i<say;i++)par[i]=i;
+  const bul=x=>{while(par[x]!==x){par[x]=par[par[x]];x=par[x];}return x;};
+  const boy=new Int32Array(say);
+  for(let i=0;i<N;i++)boy[rid[i]]++;
+  const adj=[];
+  for(let i=0;i<say;i++)adj.push(new Map());
+  const baglа=(a,b)=>{
+    adj[a].set(b,(adj[a].get(b)||0)+1);
+    adj[b].set(a,(adj[b].get(a)||0)+1);
+  };
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const p=y*W+x,a=rid[p];
+    if(x<W-1){const b=rid[p+1];if(b!==a)baglа(a,b);}
+    if(y<H-1){const b=rid[p+W];if(b!==a)baglа(a,b);}
+  }
+
+  /* --- her bölgenin en kalın yeri (numara sığar mı) --- */
+  const uz=new Float32Array(N);
+  for(let i=0;i<N;i++)uz[i]=cizgi[i]?0:1e9;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const p=y*W+x;let v=uz[p];
+    if(x>0&&uz[p-1]+1<v)v=uz[p-1]+1;
+    if(y>0&&uz[p-W]+1<v)v=uz[p-W]+1;
+    if(x>0&&y>0&&uz[p-W-1]+1.41<v)v=uz[p-W-1]+1.41;
+    if(x<W-1&&y>0&&uz[p-W+1]+1.41<v)v=uz[p-W+1]+1.41;
+    uz[p]=v;
+  }
+  for(let y=H-1;y>=0;y--)for(let x=W-1;x>=0;x--){
+    const p=y*W+x;let v=uz[p];
+    if(x<W-1&&uz[p+1]+1<v)v=uz[p+1]+1;
+    if(y<H-1&&uz[p+W]+1<v)v=uz[p+W]+1;
+    if(x<W-1&&y<H-1&&uz[p+W+1]+1.41<v)v=uz[p+W+1]+1.41;
+    if(x>0&&y<H-1&&uz[p+W-1]+1.41<v)v=uz[p+W-1]+1.41;
+    uz[p]=v;
+  }
+  const kalinlik=new Float32Array(say);
+  for(let i=0;i<N;i++){const a=rid[i];if(uz[i]>kalinlik[a])kalinlik[a]=uz[i];}
+  const MIN_KALIN=Math.max(3.2,Math.sqrt(N)/220);
+
+  /* --- eşik: hedef bölge sayısına göre --- */
+  const HEDEF=340;
+  const sirali=Array.from(boy).sort((x,y)=>y-x);
+  let minAlan=sirali[Math.min(sirali.length-1,HEDEF)]||0;
+  minAlan=Math.max(Math.round(N/7000),Math.min(minAlan,Math.round(N/360)));
+
+  /* --- küçükten büyüğe, eşiği geçene kadar komşuya kat --- */
+  const sira=Array.from({length:say},(_,i)=>i).sort((x,y)=>boy[x]-boy[y]);
+  for(const i0 of sira){
+    let a=bul(i0),koru=0;
+    while((boy[a]<minAlan||kalinlik[a]<MIN_KALIN)&&koru++<60){
+      let hedefB=-1,enUzun=-1;
+      adj[a].forEach((c,b)=>{
+        const rb=bul(b);
+        if(rb===a)return;
+        if(c>enUzun){enUzun=c;hedefB=rb;}
+      });
+      if(hedefB<0)break;
+      par[a]=hedefB;
+      boy[hedefB]+=boy[a];
+      if(kalinlik[a]>kalinlik[hedefB])kalinlik[hedefB]=kalinlik[a];
+      adj[a].forEach((c,b)=>{
+        const rb=bul(b);
+        if(rb===hedefB)return;
+        adj[hedefB].set(rb,(adj[hedefB].get(rb)||0)+c);
+      });
+      a=hedefB;
     }
   }
+  for(let i=0;i<N;i++)rid[i]=bul(rid[i]);
 
   /* kalan bölgeleri sırala ve piksellerini topla */
   const harita=new Map();
