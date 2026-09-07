@@ -10,23 +10,23 @@
       "t": "lamborghini",
       "k": "Araba",
       "u": "https://safaksengul.github.io/boyama/resim/resimmtrablog.jpg",
-      "p": "50% 25%"
+      "p": "50% 25%",
+      "e": 1788799360986
     },
     {
       "id": "resimmtraramz",
       "t": "Kurukafa",
       "k": "Vector",
       "u": "https://safaksengul.github.io/boyama/resim/resimmtraramz.jpg",
-      "p": "50% 25%"
+      "p": "50% 25%",
+      "e": 1788799363011
     },
     {
       "id": "rmtrgu2dz",
       "t": "Korsan Gemisi",
       "k": "Fantastik",
       "u": "https://safaksengul.github.io/boyama/resim/rmtrgu2dz.jpg",
-      "o": "https://safaksengul.github.io/boyama/resim/rmtrgu2dz-cizim.jpg",
-      "p": "50% 25%",
-      "e": 1788799180479
+      "p": "50% 25%"
     }
   ],
   "kaldir": []
