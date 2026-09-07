@@ -841,6 +841,8 @@ async function loadCatalog(){
 /* ---------- galeri ---------- */
 let tab="all";
 let hiddenIds=[];
+/* çizim tabanlı boyama motoru. false = eski motor (renkten bölge çıkarma) */
+const CIZIM_MOTORU=false;
 const NEW_DAYS=7;   /* yeni eklenen resim kaç gün "Yeni" bölümünde kalsın */
 const dayNo=()=>Math.floor((Date.now()-new Date().getTimezoneOffset()*6e4)/864e5);
 
@@ -1746,7 +1748,7 @@ async function build(){
   const flt0=medianRGB(orig,W,H);
 
   let cizgiModu=false;
-  if(lineImg){
+  if(lineImg&&CIZIM_MOTORU){
     busy(true,"Çizim okunuyor…");await frame();
     try{cizgiModu=lineArtSegment(orig,flt0);}catch(e){cizgiModu=false;}
   }
