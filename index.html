@@ -512,7 +512,7 @@ async function renderGallery(){
   const rest=present.filter(c=>kats.indexOf(c)<0);
   const cats=(kats.length?listed.concat(rest):rest.concat(listed));
   const tabs=[{k:"all",l:"Tümü"}];
-  if(fresh.length)tabs.push({k:"new",l:"Yeni "+fresh.length});
+  if(fresh.length)tabs.push({k:"new",l:"Yeni"});
   cats.forEach(c=>tabs.push({k:c,l:c}));
   tabs.push({k:"mine",l:"Resmini ekle"});
   if(fin.length)tabs.push({k:"done",l:"Bitenler "+fin.length});
