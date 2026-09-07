@@ -1,8 +1,7 @@
 {
   "kategoriler": [
     "Fantastik",
-    "Savaşcı",
-    "Araba"
+    "Savaşcı"
   ],
   "kategori": {},
   "ekle": [
@@ -27,14 +26,14 @@
       "e": 1788803231478
     },
     {
-      "id": "araba-01-7gdd",
+      "id": "araba-01-8qeg",
       "t": "araba 01",
-      "k": "Araba",
-      "u": "https://safaksengul.github.io/boyama/resim/araba-01-7gdd.jpg",
-      "o": "https://safaksengul.github.io/boyama/resim/araba-01-7gdd-cizim.jpg?v=mtrn7khk",
+      "k": "Fantastik",
+      "u": "https://safaksengul.github.io/boyama/resim/araba-01-8qeg.jpg",
+      "o": "https://safaksengul.github.io/boyama/resim/araba-01-8qeg-cizim.jpg?v=mtrn8v2w",
       "kilit": false,
       "p": "50% 25%",
-      "e": 1788809868920
+      "e": 1788809929305
     }
   ],
   "kaldir": []
