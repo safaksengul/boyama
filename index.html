@@ -1073,6 +1073,10 @@ function openAdmin(){
       '<button class="abtn pick" id="aPick"><b>1</b>Renkli resmi seç <em>boyanacak olan</em></button>'+
       '<button class="abtn pick" id="aPickP"><b>2</b>Çizim halini seç <em>galeride görünen</em></button>'+
       '<button class="abtn ok" id="aAdd">Ekle ve yayınla</button>'+
+      '<button class="abtn" id="aBulk">Toplu ekle (çoklu dosya seç)</button>'+
+      '<p class="amut">Renkli resimleri ve çizimleri birlikte seç. Aynı adı taşıyan '+
+      '<b>ad.jpg</b> ile <b>ad-cizim.jpg</b> kendiliğinden eşleşir. Başlık dosya adından alınır.</p>'+
+      '<input type="file" id="aFileBulk" accept="image/*" multiple hidden>'+
       '<input type="file" id="aFile" accept="image/*" hidden>'+
       '<input type="file" id="aFileP" accept="image/*" hidden>'+
       '<input type="file" id="aFileRow" accept="image/*" hidden>'+
@@ -1316,6 +1320,58 @@ function openAdmin(){
   };
   /* satır için çizim (önizleme) yükle */
   let prevFor=-1;
+  /* --- toplu ekleme --- */
+  const slug=x=>x.toLocaleLowerCase("tr")
+    .replace(/ç/g,"c").replace(/ğ/g,"g").replace(/ı/g,"i").replace(/ö/g,"o")
+    .replace(/ş/g,"s").replace(/ü/g,"u").replace(/[^a-z0-9]+/g,"-")
+    .replace(/^-+|-+$/g,"").slice(0,20);
+  const temizAd=x=>x.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ").trim().slice(0,28);
+
+  w.querySelector("#aBulk").onclick=()=>{
+    if(!tok()){toast("Önce en alttaki erişim anahtarını yaz");return;}
+    w.querySelector("#aFileBulk").click();
+  };
+  w.querySelector("#aFileBulk").onchange=async e=>{
+    const files=[].slice.call(e.target.files);e.target.value="";
+    if(!files.length)return;
+    const taban=f=>f.name.replace(/\.[^.]+$/,"").toLocaleLowerCase("tr");
+    const cizimMi=f=>/-?cizim$|-?çizim$/i.test(taban(f));
+    const renkli=files.filter(f=>!cizimMi(f));
+    const cizim={};
+    files.filter(cizimMi).forEach(f=>{cizim[taban(f).replace(/-?[cç]izim$/i,"")]=f;});
+    if(!renkli.length){toast("Renkli resim seçilmedi");return;}
+    const sel=w.querySelector("#aKsel").value;
+    const kat=(sel==="__yeni")?w.querySelector("#aK").value.trim():sel;
+    let ok=0,hata=0;
+    for(let i=0;i<renkli.length;i++){
+      const f=renkli[i];
+      busy(true,"Yükleniyor "+(i+1)+"/"+renkli.length+"…");
+      try{
+        const b=taban(f);
+        let id=(slug(b)||"resim")+"-"+Date.now().toString(36).slice(-4);
+        if(draft.ekle.some(x=>x.id===id))id+=i;
+        const d=await shrink(f);
+        await store.set("admin:tok",tok());
+        await ghPut(GH.dir+"/"+id+".jpg",d.split(",")[1],"resim: "+id,tok());
+        let o2="";
+        if(cizim[b]){
+          const dc=await shrink(cizim[b]);
+          await ghPut(GH.dir+"/"+id+"-cizim.jpg",dc.split(",")[1],"çizim: "+id,tok());
+          o2=GH.site+GH.dir+"/"+id+"-cizim.jpg?v="+Date.now().toString(36);
+        }
+        draft.ekle.push({id:id,t:temizAd(f.name),k:kat||"Diğer",
+                         u:GH.site+GH.dir+"/"+id+".jpg",o:o2,kilit:false,
+                         p:"50% 25%",e:Date.now()});
+        ok++;
+      }catch(err){hata++;}
+    }
+    if(kat&&draft.kategoriler.indexOf(kat)<0&&!PRESETS.some(pp=>(pp.k||"Diğer")===kat))
+      draft.kategoriler.push(kat);
+    busy(false);paint();
+    toast(ok+" resim eklendi"+(hata?", "+hata+" tanesi olmadı":""));
+    if(ok)await publish();
+  };
+
   w.querySelector("#aFileRow").onchange=async e=>{
     const f=e.target.files[0];e.target.value="";
     if(!f||prevFor<0)return;
