@@ -113,6 +113,13 @@
   #admin .abtn{display:block;width:100%;margin:8px 0 0;padding:13px;background:var(--ink-3);
     border:1px solid var(--line);border-radius:12px;color:var(--text);font-family:inherit;
     font-size:15px;font-weight:700;cursor:pointer}
+  #admin .abtn.pick{display:flex;align-items:center;gap:12px;text-align:left}
+  #admin .abtn.pick b{flex:0 0 auto;width:26px;height:26px;border-radius:50%;
+    background:var(--ink);border:1px solid var(--line);color:var(--muted);
+    display:flex;align-items:center;justify-content:center;font-size:13px}
+  #admin .abtn.pick em{font-style:normal;font-size:12px;color:var(--muted);font-weight:600;margin-left:auto}
+  #admin .abtn.pick.done{border-color:rgba(120,255,180,.45)}
+  #admin .abtn.pick.done b{background:#7ef0b4;border-color:transparent;color:#08130d;font-weight:800}
   #admin .abtn.ok{background:linear-gradient(180deg,var(--accent-2),var(--accent));border-color:transparent;color:#fff}
   #admin textarea{width:100%;height:190px;padding:12px;background:#0b0c12;border:1px solid var(--line);
     border-radius:12px;color:#b7f7d5;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.45}
@@ -440,6 +447,7 @@ async function loadCatalog(){
       t:String(x.t||"Resim").slice(0,40),
       k:String(x.k||"Diğer").slice(0,18),
       e:Number(x.e)||0,
+      o:(x.o&&/^https:\/\//.test(x.o))?String(x.o):"",
       u:String(x.u),
       p:String(x.p||"50% 25%").slice(0,20)
     }));
@@ -471,7 +479,8 @@ async function myList(){return (await store.get("myimgs"))||[];}
 async function allItems(){
   const out=[];
   PRESETS.forEach((p,i)=>out.push({id:"p"+i,t:p.t,d:p.d,p:p.p,hp:p.hp,base:p.k||"Diğer",own:false}));
-  remote.ekle.forEach(x=>out.push({id:x.id,t:x.t,d:x.u,p:x.p,base:x.k,own:false,net:true,e:x.e||0}));
+  remote.ekle.forEach(x=>out.push({id:x.id,t:x.t,d:x.u,p:x.p,base:x.k,own:false,net:true,
+                                   e:x.e||0,prev:x.o||""}));
   for(const it of await myList()){
     const rec=await store.get("img:"+it.id);
     if(rec)out.push({id:it.id,t:rec.t,d:rec.d,p:rec.p,base:"Benim",own:true});
@@ -544,8 +553,8 @@ async function renderGallery(){
     if(it.fresh)extra+='<i class="ribbon">YENİ</i>';
     if(it.pct>0&&it.pct<100)
       extra+='<i class="fillmask" style="height:'+it.pct+'%"></i><i class="badge">%'+it.pct+'</i>';
-    b.innerHTML='<img class="thumb" src="'+it.d+'" alt="'+it.t+'" style="object-position:'+(it.p||"50% 25%")+'">'+extra;
-    applySketch(b.querySelector("img"),it.d);
+    b.innerHTML='<img class="thumb" src="'+(it.prev||it.d)+'" alt="'+it.t+'" style="object-position:'+(it.p||"50% 25%")+'">'+extra;
+    if(!it.prev)applySketch(b.querySelector("img"),it.d);
     b.onclick=e=>{
       if(e.target.classList.contains("more")){cardMenu(it);return;}
       loadSrc(it.d,it.id);
@@ -626,14 +635,15 @@ function openAdmin(){
     '<div class="abar"><b>Yönetici paneli</b><button class="ax">Kapat</button></div>'+
     '<div class="abody">'+
       '<h5>Yeni resim ekle</h5>'+
-      '<input class="af" id="aId" placeholder="kısa kimlik (kaplan01)">'+
-      '<input class="af" id="aT" placeholder="başlık (Kaplan)">'+
+      '<input class="af" id="aT" placeholder="başlık (Korsan gemisi)">'+
       '<div class="arow2"><select class="asel wide" id="aKsel"></select>'+
       '<input class="af mini" id="aK" placeholder="yeni kategori" hidden></div>'+
-      '<input class="af" id="aU" placeholder="https://... resim adresi">'+
-      '<button class="abtn" id="aPick">Bilgisayardan resim seç ve yükle</button>'+
+      '<button class="abtn pick" id="aPick"><b>1</b>Renkli resmi seç <em>boyanacak olan</em></button>'+
+      '<button class="abtn pick" id="aPickP"><b>2</b>Çizim halini seç <em>galeride görünen</em></button>'+
+      '<button class="abtn ok" id="aAdd">Ekle ve yayınla</button>'+
       '<input type="file" id="aFile" accept="image/*" hidden>'+
-      '<button class="abtn" id="aAdd">Listeye ekle</button>'+
+      '<input type="file" id="aFileP" accept="image/*" hidden>'+
+      '<input type="file" id="aFileRow" accept="image/*" hidden>'+
       '<h5>Kategori sırası</h5>'+
       '<p class="amut">Sekmeler bu sırayla görünür. Listede olmayan kategoriler sona eklenir.</p>'+
       '<input class="af" id="aKat" placeholder="kategori adı">'+
@@ -709,6 +719,12 @@ function openAdmin(){
         paint();
       }));
       if(row.tur==="uzak"){
+        const c=document.createElement("button");
+        c.className="amv wide"+(draft.ekle[row.i].o?" on":"");
+        c.textContent=draft.ekle[row.i].o?"Çizim ✓":"Çizim yükle";
+        c.title="Galeride görünecek çizim hali";
+        c.onclick=()=>{prevFor=row.i;w.querySelector("#aFileRow").click();};
+        nav.appendChild(c);
         const y=document.createElement("button");
         y.className="amv wide"+(yeni?" on":"");
         y.textContent=yeni?"Yeni ✓":"Yeni yap";
@@ -757,18 +773,6 @@ function openAdmin(){
     if(draft.kategoriler.indexOf(c)>=0){toast("Bu kategori zaten listede");return;}
     draft.kategoriler.push(c);el.value="";paint();
   };
-  w.querySelector("#aAdd").onclick=()=>{
-    const g=k=>w.querySelector(k).value.trim();
-    const sel=w.querySelector("#aKsel").value;
-    const id=g("#aId").replace(/[^\w-]/g,""),t=g("#aT"),u=g("#aU");
-    const k=(sel==="__yeni")?g("#aK"):sel;
-    if(!id||!u||!/^https:\/\//.test(u)){toast("Kimlik ve https adresi şart");return;}
-    if(draft.ekle.some(x=>x.id===id)){toast("Bu kimlik zaten var");return;}
-    if(k&&draft.kategoriler.indexOf(k)<0&&!PRESETS.some(pp=>(pp.k||"Diğer")===k))draft.kategoriler.push(k);
-    draft.ekle.push({id:id,t:t||"Resim",k:k||"Diğer",u:u,p:"50% 25%",e:Date.now()});
-    ["#aId","#aT","#aK","#aU"].forEach(s=>w.querySelector(s).value="");
-    paint();toast("Eklendi");
-  };
   w.querySelector("#aCopy").onclick=async()=>{
     try{await navigator.clipboard.writeText(json());toast("Kopyalandı");}
     catch(e){w.querySelector("#aJson").select();toast("Elle kopyala");}
@@ -780,7 +784,7 @@ function openAdmin(){
     setTimeout(()=>URL.revokeObjectURL(a.href),4000);
   };
   w.querySelector("#aTry").onclick=async()=>{
-    remote={ekle:draft.ekle.map(x=>({id:"r"+x.id,t:x.t,k:x.k,u:x.u,p:x.p||"50% 25%",e:x.e||0})),
+    remote={ekle:draft.ekle.map(x=>({id:"r"+x.id,t:x.t,k:x.k,u:x.u,p:x.p||"50% 25%",e:x.e||0,o:x.o||""})),
             kaldir:draft.kaldir.slice(),kats:draft.kategoriler.slice(),
             kmap:Object.assign({},draft.kategori)};
     await store.set("cat:data",remote);
@@ -792,42 +796,101 @@ function openAdmin(){
   const tok=()=>w.querySelector("#aTok").value.trim();
 
   /* resmi doğrudan depoya yükle */
+  /* --- yeni resim: iki dosya, tek akış --- */
+  let pend={id:"",u:"",o:""};
+  function pendPaint(){
+    const p1=w.querySelector("#aPick"),p2=w.querySelector("#aPickP");
+    p1.classList.toggle("done",!!pend.u);
+    p2.classList.toggle("done",!!pend.o);
+    p1.querySelector("b").textContent=pend.u?"✓":"1";
+    p2.querySelector("b").textContent=pend.o?"✓":"2";
+  }
+  function newId(){
+    if(!pend.id)pend.id="r"+Date.now().toString(36);
+    return pend.id;
+  }
+  async function upload(f,suffix){
+    const id=newId();
+    const d=await shrink(f);
+    await store.set("admin:tok",tok());
+    await ghPut(GH.dir+"/"+id+suffix+".jpg",d.split(",")[1],"resim: "+id+suffix,tok());
+    return GH.site+GH.dir+"/"+id+suffix+".jpg";
+  }
   w.querySelector("#aPick").onclick=()=>{
-    if(!tok()){toast("Önce erişim anahtarını yaz");return;}
+    if(!tok()){toast("Önce en alttaki erişim anahtarını yaz");return;}
     w.querySelector("#aFile").click();
+  };
+  w.querySelector("#aPickP").onclick=()=>{
+    if(!tok()){toast("Önce en alttaki erişim anahtarını yaz");return;}
+    w.querySelector("#aFileP").click();
   };
   w.querySelector("#aFile").onchange=async e=>{
     const f=e.target.files[0];e.target.value="";
     if(!f)return;
-    const id=(w.querySelector("#aId").value.trim().replace(/[^\w-]/g,""))||("resim"+Date.now().toString(36));
-    busy(true,"Resim yükleniyor…");
+    busy(true,"Renkli resim yükleniyor…");
+    try{
+      pend.u=await upload(f,"");
+      const t=w.querySelector("#aT");
+      if(!t.value.trim())t.value=f.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ").slice(0,24);
+      busy(false);pendPaint();toast("Renkli resim yüklendi");
+    }catch(err){busy(false);toast("Yüklenemedi: "+err.message);}
+  };
+  w.querySelector("#aFileP").onchange=async e=>{
+    const f=e.target.files[0];e.target.value="";
+    if(!f)return;
+    busy(true,"Çizim yükleniyor…");
+    try{
+      pend.o=await upload(f,"-cizim");
+      busy(false);pendPaint();toast("Çizim yüklendi");
+    }catch(err){busy(false);toast("Yüklenemedi: "+err.message);}
+  };
+  w.querySelector("#aAdd").onclick=async()=>{
+    if(!pend.u){toast("Önce renkli resmi seç");return;}
+    const sel=w.querySelector("#aKsel").value;
+    const k=(sel==="__yeni")?w.querySelector("#aK").value.trim():sel;
+    const t=w.querySelector("#aT").value.trim()||"Resim";
+    if(k&&draft.kategoriler.indexOf(k)<0&&!PRESETS.some(pp=>(pp.k||"Diğer")===k))draft.kategoriler.push(k);
+    draft.ekle.push({id:pend.id,t:t,k:k||"Diğer",u:pend.u,o:pend.o,p:"50% 25%",e:Date.now()});
+    pend={id:"",u:"",o:""};
+    w.querySelector("#aT").value="";
+    w.querySelector("#aK").value="";
+    pendPaint();paint();
+    await publish();
+  };
+  /* satır için çizim (önizleme) yükle */
+  let prevFor=-1;
+  w.querySelector("#aFileRow").onchange=async e=>{
+    const f=e.target.files[0];e.target.value="";
+    if(!f||prevFor<0)return;
+    if(!tok()){toast("Önce erişim anahtarını yaz");return;}
+    const it=draft.ekle[prevFor];
+    busy(true,"Çizim yükleniyor…");
     try{
       const d=await shrink(f);
       await store.set("admin:tok",tok());
-      await ghPut(GH.dir+"/"+id+".jpg",d.split(",")[1],"resim: "+id,tok());
-      w.querySelector("#aId").value=id;
-      w.querySelector("#aU").value=GH.site+GH.dir+"/"+id+".jpg";
-      if(!w.querySelector("#aT").value.trim())
-        w.querySelector("#aT").value=f.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ").slice(0,24);
-      busy(false);toast("Yüklendi, şimdi \u201cListeye ekle\u201d de");
+      await ghPut(GH.dir+"/"+it.id+"-cizim.jpg",d.split(",")[1],"çizim: "+it.id,tok());
+      it.o=GH.site+GH.dir+"/"+it.id+"-cizim.jpg";
+      busy(false);paint();toast("Çizim yüklendi");
     }catch(err){busy(false);toast("Yüklenemedi: "+err.message);}
+    prevFor=-1;
   };
 
   /* katalogu doğrudan depoya yaz */
-  w.querySelector("#aPub").onclick=async()=>{
+  async function publish(){
     if(!tok()){toast("Erişim anahtarı gerekli");return;}
     busy(true,"Yayınlanıyor…");
     try{
       await store.set("admin:tok",tok());
       await ghPut("katalog.json",b64(json()),"katalog güncellendi",tok());
-      remote={ekle:draft.ekle.map(x=>({id:"r"+x.id,t:x.t,k:x.k,u:x.u,p:x.p||"50% 25%",e:x.e||0})),
+      remote={ekle:draft.ekle.map(x=>({id:"r"+x.id,t:x.t,k:x.k,u:x.u,p:x.p||"50% 25%",e:x.e||0,o:x.o||""})),
               kaldir:draft.kaldir.slice(),kats:draft.kategoriler.slice(),
               kmap:Object.assign({},draft.kategori)};
       await store.set("cat:data",remote);
       await renderGallery();
       busy(false);toast("Yayınlandı");
     }catch(err){busy(false);toast("Yayınlanamadı: "+err.message);}
-  };
+  }
+  w.querySelector("#aPub").onclick=publish;
 
   w.querySelector(".ax").onclick=()=>w.remove();
 }
