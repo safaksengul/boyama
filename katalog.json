@@ -10,14 +10,16 @@
       "t": "lamborghini",
       "k": "Araba",
       "u": "https://safaksengul.github.io/boyama/resim/resimmtrablog.jpg",
-      "p": "50% 25%"
+      "p": "50% 25%",
+      "e": 1788796352180
     },
     {
       "id": "resimmtraramz",
       "t": "Kurukafa",
       "k": "Vector",
       "u": "https://safaksengul.github.io/boyama/resim/resimmtraramz.jpg",
-      "p": "50% 25%"
+      "p": "50% 25%",
+      "e": 1788796352998
     }
   ],
   "kaldir": []
