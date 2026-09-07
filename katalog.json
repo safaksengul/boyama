@@ -1,6 +1,7 @@
 {
   "kategoriler": [
-    "Fantastik"
+    "Fantastik",
+    "Savaşcı"
   ],
   "kategori": {},
   "ekle": [
@@ -9,9 +10,16 @@
       "t": "Korsan Gemisi",
       "k": "Fantastik",
       "u": "https://safaksengul.github.io/boyama/resim/rmtrhoec3.jpg",
-      "o": "https://safaksengul.github.io/boyama/resim/rmtrhoec3-cizim.jpg",
+      "p": "50% 25%"
+    },
+    {
+      "id": "rmtricm8b",
+      "t": "Savaşcı Kadın",
+      "k": "Savaşcı",
+      "u": "https://safaksengul.github.io/boyama/resim/rmtricm8b.jpg",
+      "o": "https://safaksengul.github.io/boyama/resim/rmtricm8b-cizim.jpg",
       "p": "50% 25%",
-      "e": 1788800600218
+      "e": 1788801755358
     }
   ],
   "kaldir": []
