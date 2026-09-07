@@ -218,6 +218,36 @@
     font-size:15px;font-weight:600;font-family:inherit;cursor:pointer}
   .sopt.danger{color:#ff8b8b}
   .sopt.cancel{text-align:center;background:transparent;color:var(--muted);margin-top:6px}
+  .ghead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  #btnShop{flex:0 0 auto;margin-top:4px;background:linear-gradient(180deg,#f7c948,#e0a21a);
+    border:0;color:#241a02;border-radius:99px;padding:10px 18px;font-family:inherit;
+    font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(224,162,26,.35)}
+  #btnShop:active{transform:scale(.96)}
+  .card .lockv{position:absolute;inset:0;background:rgba(6,7,12,.55);backdrop-filter:blur(1.5px);z-index:2}
+  .card .lock{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;
+    font-style:normal;font-size:11px;font-weight:800;letter-spacing:.04em;color:#241a02;
+    background:linear-gradient(180deg,#f7c948,#e0a21a);border-radius:99px;padding:5px 11px;white-space:nowrap}
+  #shop{position:fixed;inset:0;z-index:65;background:var(--ink);display:flex;flex-direction:column}
+  #shop .abar{display:flex;align-items:center;justify-content:space-between;
+    padding:calc(14px + var(--safe-t)) 16px 14px;border-bottom:1px solid var(--line);font-size:16px}
+  #shop .ax{background:var(--ink-3);border:1px solid var(--line);color:var(--text);
+    border-radius:99px;padding:8px 16px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+  #shop .abody{flex:1;overflow-y:auto;padding:16px 16px calc(28px + var(--safe-b))}
+  #shop .sdurum{margin:0 0 14px;padding:12px 14px;background:rgba(247,201,72,.12);
+    border:1px solid rgba(247,201,72,.35);border-radius:12px;color:#f7c948;font-size:13px;line-height:1.5}
+  .scard{display:block;width:100%;text-align:left;margin:0 0 10px;padding:16px;
+    background:var(--ink-2);border:1px solid var(--line);border-radius:16px;
+    color:var(--text);font-family:inherit;cursor:pointer}
+  .scard:active{transform:scale(.99)}
+  .scard.one{border-color:rgba(247,201,72,.5);background:linear-gradient(180deg,rgba(247,201,72,.10),transparent)}
+  .scard .sad{display:block;font-size:16px;font-weight:800;margin-bottom:5px}
+  .scard .sac{display:block;font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:10px}
+  .scard .sfi{display:inline-block;background:var(--ink-3);border:1px solid var(--line);
+    border-radius:99px;padding:6px 14px;font-size:14px;font-weight:800}
+  .scard.one .sfi{background:linear-gradient(180deg,#f7c948,#e0a21a);border-color:transparent;color:#241a02}
+  #shop .abtn{display:block;width:100%;margin-top:14px;padding:13px;background:transparent;
+    border:1px solid var(--line);border-radius:12px;color:var(--muted);
+    font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
   #mineNote{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.5}
   #empty{color:var(--muted);font-size:14px;text-align:center;padding:40px 10px}
   .card .redo{position:absolute;left:8px;top:8px;width:28px;height:28px;border-radius:50%;
@@ -323,6 +353,7 @@
       <h1>Sayılarla <em>Boyama</em></h1>
       <p class="sub">Bir resim seç, sırayla boya, rozetleri topla.</p>
     </div>
+    <button id="btnShop" title="Dükkân">Dükkân</button>
   </div>
   <button class="hero" id="hero"></button>
   <div id="tabs"></div>
@@ -427,6 +458,103 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const lum=c=>.2126*c[0]+.7152*c[1]+.0722*c[2];
 const css=c=>"rgb("+c[0]+","+c[1]+","+c[2]+")";
 
+/* ---------- DÜKKÂN ----------
+   Ürünleri buradan değiştirebilirsin: fiyat, ad, açıklama, verilen şey.
+   ver: {vipGun:30}  -> o kadar gün VIP
+        {noads:true} -> reklamlar kalıcı kapanır
+        {bulb,bucket,bomb} -> eşya verir
+        {kilitTek:true}    -> dokunulan kilitli resmi açar          */
+const DENEME_MODU=true;   /* Google Play'e çıkarken false yap */
+const SHOP=[
+  {sku:"vip_aylik", ad:"VIP Üyelik", fiyat:"10 $ / ay", one:true,
+   aciklama:"Bütün kilitli resimler açılır ve reklamlar kalkar. Her ay yenilenir.",
+   ver:{vipGun:30}},
+  {sku:"reklamsiz", ad:"Reklamsız — Sonsuza Kadar", fiyat:"20 $",
+   aciklama:"Reklamlar kalıcı olarak kapanır. Kilitli resimler dahil değildir.",
+   ver:{noads:true}},
+  {sku:"paket_orta", ad:"Boya Paketi", fiyat:"5 $",
+   aciklama:"10 ipucu, 4 kova, 2 dinamit.",
+   ver:{bulb:10,bucket:4,bomb:2}},
+  {sku:"paket_kucuk", ad:"Küçük Paket", fiyat:"2 $",
+   aciklama:"3 ipucu, 1 kova, 1 dinamit. Denemek için.",
+   ver:{bulb:3,bucket:1,bomb:1}},
+  {sku:"paket_buyuk", ad:"Büyük Paket", fiyat:"12 $",
+   aciklama:"30 ipucu, 12 kova, 6 dinamit. Kutu başına en ucuzu.",
+   ver:{bulb:30,bucket:12,bomb:6}},
+  {sku:"kilit_tek", ad:"Bu resmi aç", fiyat:"1 $", sadeceKilit:true,
+   aciklama:"Yalnızca seçtiğin resmi kalıcı olarak açar.",
+   ver:{kilitTek:true}}
+];
+
+let ent={vipUntil:0,noads:false,acik:[]};
+const isVip=()=>ent.vipUntil>Date.now();
+const adsOff=()=>ent.noads||isVip();
+const acikMi=id=>isVip()||ent.acik.indexOf(id)>=0;
+async function loadEnt(){
+  const e=await store.get("ent");
+  if(e)ent={vipUntil:e.vipUntil||0,noads:!!e.noads,acik:e.acik||[]};
+}
+
+/* Kabuk uygulama (Google Play Faturalandırma) şunu tanımlar:
+     window.Billing = { buy(sku){ return Promise<true|false>; },
+                        restore(){ return Promise<{vipUntil,noads,acik}>; } }  */
+async function buy(p,ctxId){
+  let ok=false;
+  if(window.Billing&&typeof window.Billing.buy==="function"){
+    busy(true,"Mağazaya bağlanılıyor…");
+    try{ok=await window.Billing.buy(p.sku);}catch(e){ok=false;}
+    busy(false);
+  }else if(DENEME_MODU){
+    ok=confirm("Deneme modu\n\n“"+p.ad+"” ("+p.fiyat+") satın alınmış sayılsın mı?");
+  }else{toast("Mağaza şu an kullanılamıyor");return;}
+  if(!ok){toast("Satın alma tamamlanmadı");return;}
+  const v=p.ver;
+  if(v.vipGun)ent.vipUntil=Math.max(ent.vipUntil,Date.now())+v.vipGun*864e5;
+  if(v.noads)ent.noads=true;
+  if(v.kilitTek&&ctxId&&ent.acik.indexOf(ctxId)<0)ent.acik.push(ctxId);
+  ["bulb","bucket","bomb"].forEach(k=>{if(v[k])items[k]=(items[k]||0)+v[k];});
+  await store.set("ent",ent);
+  await store.set("items",items);
+  try{updateTools();}catch(e){}
+  await renderGallery();
+  toast("Teşekkürler! "+p.ad+" etkin");
+}
+
+function openShop(ctxId){
+  const w=document.createElement("div");
+  w.id="shop";
+  const vipTxt=isVip()
+    ? "VIP üyeliğin "+new Date(ent.vipUntil).toLocaleDateString("tr-TR")+" tarihine kadar geçerli."
+    : (ent.noads?"Reklamlar kapalı. Kilitli resimler için VIP gerekiyor.":"");
+  w.innerHTML='<div class="abar"><b>Dükkân</b><button class="ax">Kapat</button></div>'+
+    '<div class="abody">'+(vipTxt?'<p class="sdurum">'+vipTxt+'</p>':'')+
+    '<div id="sList"></div>'+
+    '<button class="abtn" id="sRestore">Satın alımlarımı geri yükle</button></div>';
+  document.body.appendChild(w);
+  const L=w.querySelector("#sList");
+  SHOP.forEach(p=>{
+    if(p.sadeceKilit&&!ctxId)return;
+    if(p.ver.noads&&adsOff())return;
+    const c=document.createElement("button");
+    c.className="scard"+(p.one?" one":"");
+    c.innerHTML='<span class="sad">'+p.ad+'</span>'+
+                '<span class="sac">'+p.aciklama+'</span>'+
+                '<span class="sfi">'+p.fiyat+'</span>';
+    c.onclick=async()=>{w.remove();await buy(p,ctxId);};
+    L.appendChild(c);
+  });
+  w.querySelector("#sRestore").onclick=async()=>{
+    if(!(window.Billing&&window.Billing.restore)){toast("Geri yükleme yalnızca uygulamada çalışır");return;}
+    busy(true,"Kontrol ediliyor…");
+    try{
+      const r=await window.Billing.restore();
+      if(r){ent={vipUntil:r.vipUntil||0,noads:!!r.noads,acik:r.acik||[]};await store.set("ent",ent);}
+      busy(false);w.remove();await renderGallery();toast("Satın alımların geri yüklendi");
+    }catch(e){busy(false);toast("Geri yüklenemedi");}
+  };
+  w.querySelector(".ax").onclick=()=>w.remove();
+}
+
 /* ---------- uzak katalog ----------
    Buraya kendi adresini yaz; boş bırakırsan uygulama sadece
    resimler.js içindeki resimlerle çalışır (eski davranış).
@@ -452,6 +580,7 @@ async function loadCatalog(){
       k:String(x.k||"Diğer").slice(0,18),
       e:Number(x.e)||0,
       o:(x.o&&/^https:\/\//.test(x.o))?String(x.o):"",
+      kilit:!!x.kilit,
       u:String(x.u),
       p:String(x.p||"50% 25%").slice(0,20)
     }));
@@ -473,6 +602,9 @@ async function loadPrefs(){
   hiddenIds=(await store.get("hidden"))||[];
 }
 async function buildGallery(){
+  await loadEnt();
+  const it0=await store.get("items");
+  if(it0)items=it0;
   await loadPrefs();
   await renderGallery();
   await loadCatalog();
@@ -484,7 +616,7 @@ async function allItems(){
   const out=[];
   PRESETS.forEach((p,i)=>out.push({id:"p"+i,t:p.t,d:p.d,p:p.p,hp:p.hp,base:p.k||"Diğer",own:false}));
   remote.ekle.forEach(x=>out.push({id:x.id,t:x.t,d:x.u,p:x.p,base:x.k,own:false,net:true,
-                                   e:x.e||0,prev:x.o||""}));
+                                   e:x.e||0,prev:x.o||"",kilit:!!x.kilit}));
   for(const it of await myList()){
     const rec=await store.get("img:"+it.id);
     if(rec)out.push({id:it.id,t:rec.t,d:rec.d,p:rec.p,base:"Benim",own:true});
@@ -555,6 +687,8 @@ async function renderGallery(){
     b.className="card"+(it.pct>=100?" fin":"")+(it.hid?" hid":"");
     let extra='<i class="more" title="Seçenekler">⋯</i>';
     if(it.fresh)extra+='<i class="ribbon">YENİ</i>';
+    const kilitli=it.kilit&&!acikMi(it.id);
+    if(kilitli)extra+='<i class="lockv"></i><i class="lock">🔒 VIP</i>';
     if(it.pct>0&&it.pct<100)
       extra+='<i class="fillmask" style="height:'+it.pct+'%"></i><i class="badge">%'+it.pct+'</i>';
     b.innerHTML='<img class="thumb" src="'+(it.prev||it.d)+'" alt="'+it.t+'" style="object-position:'+(it.p||"50% 25%")+'">'+extra;
@@ -571,6 +705,7 @@ async function renderGallery(){
     }else applySketch(imel,it.d);
     b.onclick=e=>{
       if(e.target.classList.contains("more")){cardMenu(it);return;}
+      if(kilitli){openShop(it.id);return;}
       loadSrc(it.d,it.id);
     };
     g.appendChild(b);
@@ -640,7 +775,7 @@ async function ghPut(path,contentB64,msg,tok){
 
 function openAdmin(){
   const draft={ekle:remote.ekle.map(x=>({id:x.id.replace(/^r/,""),t:x.t,k:x.k,u:x.u,
-                                        o:x.o||"",p:x.p,e:x.e||0})),
+                                        o:x.o||"",kilit:!!x.kilit,p:x.p,e:x.e||0})),
                kaldir:remote.kaldir.slice(),
                kategoriler:(remote.kats||[]).slice(),
                kategori:Object.assign({},remote.kmap||{})};
@@ -750,6 +885,11 @@ function openAdmin(){
         paint();
       }));
       if(row.tur==="uzak"){
+        const kl=document.createElement("button");
+        kl.className="amv wide"+(draft.ekle[row.i].kilit?" on":"");
+        kl.textContent=draft.ekle[row.i].kilit?"Kilitli 🔒":"Kilitle";
+        kl.onclick=()=>{draft.ekle[row.i].kilit=!draft.ekle[row.i].kilit;paint();};
+        nav.appendChild(kl);
         const c=document.createElement("button");
         c.className="amv wide"+(draft.ekle[row.i].o?" on":"");
         c.textContent=draft.ekle[row.i].o?"Çizim ✓":"Çizim yükle";
@@ -815,7 +955,7 @@ function openAdmin(){
     setTimeout(()=>URL.revokeObjectURL(a.href),4000);
   };
   w.querySelector("#aTry").onclick=async()=>{
-    remote={ekle:draft.ekle.map(x=>({id:"r"+x.id,t:x.t,k:x.k,u:x.u,p:x.p||"50% 25%",e:x.e||0,o:x.o||""})),
+    remote={ekle:draft.ekle.map(x=>({id:"r"+x.id,t:x.t,k:x.k,u:x.u,p:x.p||"50% 25%",e:x.e||0,o:x.o||"",kilit:!!x.kilit})),
             kaldir:draft.kaldir.slice(),kats:draft.kategoriler.slice(),
             kmap:Object.assign({},draft.kategori)};
     await store.set("cat:data",remote);
@@ -881,7 +1021,7 @@ function openAdmin(){
     const k=(sel==="__yeni")?w.querySelector("#aK").value.trim():sel;
     const t=w.querySelector("#aT").value.trim()||"Resim";
     if(k&&draft.kategoriler.indexOf(k)<0&&!PRESETS.some(pp=>(pp.k||"Diğer")===k))draft.kategoriler.push(k);
-    draft.ekle.push({id:pend.id,t:t,k:k||"Diğer",u:pend.u,o:pend.o,p:"50% 25%",e:Date.now()});
+    draft.ekle.push({id:pend.id,t:t,k:k||"Diğer",u:pend.u,o:pend.o,kilit:false,p:"50% 25%",e:Date.now()});
     pend={id:"",u:"",o:""};
     w.querySelector("#aT").value="";
     w.querySelector("#aK").value="";
@@ -913,7 +1053,7 @@ function openAdmin(){
     try{
       await store.set("admin:tok",tok());
       await ghPut("katalog.json",b64(json()),"katalog güncellendi",tok());
-      remote={ekle:draft.ekle.map(x=>({id:"r"+x.id,t:x.t,k:x.k,u:x.u,p:x.p||"50% 25%",e:x.e||0,o:x.o||""})),
+      remote={ekle:draft.ekle.map(x=>({id:"r"+x.id,t:x.t,k:x.k,u:x.u,p:x.p||"50% 25%",e:x.e||0,o:x.o||"",kilit:!!x.kilit})),
               kaldir:draft.kaldir.slice(),kats:draft.kategoriler.slice(),
               kmap:Object.assign({},draft.kategori)};
       await store.set("cat:data",remote);
@@ -1096,6 +1236,7 @@ function loadSrc(src,id){
   im.onerror=()=>{busy(false);toast("Resim indirilemedi, bağlantını kontrol et");};
   im.src=src;
 }
+$("#btnShop").onclick=()=>openShop(null);
 $("#btnNew").onclick=()=>{buildGallery();$("#setup").style.display="";};
 $("#file").onchange=async e=>{
   const f=e.target.files[0];e.target.value="";
@@ -1181,7 +1322,7 @@ async function build(){
   texCtx=texCv.getContext("2d");texCtx.clearRect(0,0,W,H);
   makeTile();
 
-  items={bulb:3,bucket:1,bomb:1};manual=0;active=0;
+  manual=0;active=0;
   const st=await store.get("pbn:"+curId);
   let restored=false;
   if(st&&st.v===1&&st.n===regions.length&&st.k===K){
@@ -1189,7 +1330,7 @@ async function build(){
     for(let i=0;i<regions.length;i++)
       if((bin.charCodeAt(i>>3)>>(i&7))&1)regions[i].filled=true;
     doneTasks=regions.reduce((a,r)=>a+(r.filled?1:0),0);
-    manual=st.m||0;if(st.i)items=st.i;active=Math.min(st.a||0,K-1);
+    manual=st.m||0;active=Math.min(st.a||0,K-1);
     restored=doneTasks>0&&doneTasks<totalTasks;
   }
   buildSnapshot();rebuildTexture();buildPalette();
@@ -1697,7 +1838,10 @@ function updateProgress(){
   $("#bar").style.width=p+"%";$("#pct").textContent="%"+p;
   $("#pillBar").style.width=p+"%";$("#pillPct").textContent="%"+p;
 }
+let itemsT;
+function saveItems(){clearTimeout(itemsT);itemsT=setTimeout(()=>store.set("items",items),400);}
 function updateTools(){
+  saveItems();
   const set=(id,k)=>{
     const el=$("#"+id);
     el.querySelector(".cnt").textContent=items[k];
@@ -1715,6 +1859,8 @@ function updateTools(){
      };
    Tanımlı değilse hiçbir şey değişmez, uygulama eskisi gibi çalışır. */
 const AD_NAME={bulb:"ipucu",bucket:"kova",bomb:"dinamit"};
+/* bir reklam karşılığı verilen miktar — istediğin gibi değiştir */
+const AD_REWARD={bulb:3,bucket:2,bomb:1};
 const AD_ICON={bulb:"💡",bucket:"",bomb:"🧨"};
 function adReady(){
   try{
@@ -1725,10 +1871,17 @@ function adReady(){
 /* eşya bittiğinde: reklam varsa teklif et, yoksa eski uyarıyı ver */
 function outOfItem(kind){
   const left=EARN[kind]-manual%EARN[kind],name=AD_NAME[kind];
-  if(!adReady()){toast(left+" bölge daha boya, "+name+" kazan");return;}
+  if(adsOff()||!adReady()){
+    sheet(name.charAt(0).toLocaleUpperCase("tr")+name.slice(1)+" kalmadı",[
+      {l:left+" bölge daha boyayarak kazan",fn:()=>{}},
+      {l:"Dükkândan paket al",fn:()=>openShop(null)}
+    ]);
+    return;
+  }
   sheet((AD_ICON[kind]?AD_ICON[kind]+"  ":"")+name.charAt(0).toLocaleUpperCase("tr")+name.slice(1)+" kalmadı",[
-    {l:"Reklam izle, 1 "+name+" kazan",fn:()=>watchAd(kind)},
-    {l:left+" bölge daha boyayarak kazan",fn:()=>{}}
+    {l:"Reklam izle, "+AD_REWARD[kind]+" "+name+" kazan",fn:()=>watchAd(kind)},
+    {l:left+" bölge daha boyayarak kazan",fn:()=>{}},
+    {l:"Dükkândan paket al",fn:()=>openShop(null)}
   ]);
 }
 async function watchAd(kind){
@@ -1737,9 +1890,10 @@ async function watchAd(kind){
   try{ok=await window.RewardedAd.show(kind);}catch(e){ok=false;}
   busy(false);
   if(!ok){toast("Reklam açılamadı, ödül verilmedi");return;}
-  items[kind]=(items[kind]||0)+1;
+  const n=AD_REWARD[kind]||1;
+  items[kind]=(items[kind]||0)+n;
   updateTools();saveState(true);
-  toast("Kazandın: 1 "+AD_NAME[kind]);
+  toast("Kazandın: "+n+" "+AD_NAME[kind]);
 }
 
 $("#tBulb").onclick=()=>{
@@ -2083,7 +2237,7 @@ $("#btnCloseSet").onclick=()=>$("#settings").classList.remove("on");
 $("#btnReset").onclick=()=>{
   $("#settings").classList.remove("on");
   for(const r of regions)r.filled=false;
-  doneTasks=0;manual=0;items={bulb:3,bucket:1,bomb:1};updateTools();
+  doneTasks=0;manual=0;updateTools();
   redrawSnapshot();rebuildTexture();buildPalette();updateProgress();selectColor(0);
   store.del("pbn:"+curId);
 };
