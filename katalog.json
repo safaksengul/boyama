@@ -1,34 +1,9 @@
 {
-  "kategoriler": [
-    "Araba",
-    "Vector"
-  ],
+  "kategoriler": [],
+
   "kategori": {},
-  "ekle": [
-    {
-      "id": "resimmtrablog",
-      "t": "lamborghini",
-      "k": "Araba",
-      "u": "https://safaksengul.github.io/boyama/resim/resimmtrablog.jpg",
-      "p": "50% 25%",
-      "e": 1788799391337
-    },
-    {
-      "id": "resimmtraramz",
-      "t": "Kurukafa",
-      "k": "Vector",
-      "u": "https://safaksengul.github.io/boyama/resim/resimmtraramz.jpg",
-      "p": "50% 25%",
-      "e": 1788799390767
-    },
-    {
-      "id": "rmtrgu2dz",
-      "t": "Korsan Gemisi",
-      "k": "Fantastik",
-      "u": "https://safaksengul.github.io/boyama/resim/rmtrgu2dz.jpg",
-      "p": "50% 25%",
-      "e": 1788799390181
-    }
-  ],
+
+  "ekle": [],
+
   "kaldir": []
 }

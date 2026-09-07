@@ -125,6 +125,10 @@
     border-radius:12px;color:#b7f7d5;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.45}
   #admin .arow{display:flex;align-items:center;justify-content:space-between;gap:10px;
     padding:11px 13px;margin-bottom:7px;background:var(--ink-2);border:1px solid var(--line);border-radius:12px}
+  #admin .agrp{margin:16px 0 8px;font-size:12px;font-weight:800;letter-spacing:.05em;
+    color:var(--accent-2);text-transform:uppercase;
+    border-bottom:1px solid var(--line);padding-bottom:6px}
+  #admin .agrp:first-child{margin-top:4px}
   #admin .arow.off{opacity:.45}
   #admin .arow span{font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #admin .ayeni{font-style:normal;font-size:9px;font-weight:800;letter-spacing:.06em;
@@ -705,7 +709,23 @@ function openAdmin(){
     draft.ekle.forEach((x,i)=>rows.push({tur:"uzak",id:x.id,t:x.t,cat:x.k,e:x.e||0,i:i}));
     PRESETS.forEach((p,i)=>rows.push({tur:"dahili",id:"p"+i,t:p.t,
       cat:draft.kategori["p"+i]||p.k||"Diğer",taban:p.k||"Diğer"}));
-    rows.forEach(row=>{
+    /* kategoriye göre grupla, sekme sırasını izle */
+    const groups=[];
+    const idx=c=>{const i=draft.kategoriler.indexOf(c);return i<0?9999:i;};
+    rows.forEach(r=>{
+      let g=groups.find(x=>x.c===r.cat);
+      if(!g){g={c:r.cat,rows:[]};groups.push(g);}
+      g.rows.push(r);
+    });
+    groups.sort((a,b)=>idx(a.c)-idx(b.c)||a.c.localeCompare(b.c,"tr"));
+    groups.forEach(g=>{
+      const h=document.createElement("div");
+      h.className="agrp";
+      h.textContent=g.c+"  ("+g.rows.length+")";
+      L.appendChild(h);
+      g.rows.forEach(paintRow);
+    });
+    function paintRow(row){
       const off=draft.kaldir.indexOf(row.id)>=0;
       const yeni=row.e&&(Date.now()-row.e)<NEW_DAYS*864e5;
       const r=document.createElement("div");r.className="arow"+(off?" off":"");
@@ -745,7 +765,7 @@ function openAdmin(){
         };
       }
       nav.appendChild(b);r.appendChild(nav);L.appendChild(r);
-    });
+    }
     const ks=w.querySelector("#aKsel");
     if(ks){
       const keep=ks.value;
