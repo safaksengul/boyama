@@ -28,10 +28,6 @@
     cursor:pointer;width:100%;aspect-ratio:9/13;font-family:inherit;
     box-shadow:0 6px 14px rgba(0,0,0,.45)}
   .card img{width:100%;height:100%;object-fit:cover;object-position:50% 22%;display:block}
-  .card span{position:absolute;left:0;right:0;bottom:0;padding:16px 7px 6px;text-align:left;
-    font-size:11px;font-weight:700;line-height:1.2;color:#fff;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    background:linear-gradient(180deg,transparent,rgba(0,0,0,.8))}
   .card:active{transform:scale(.98)}
   .card.own{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
     aspect-ratio:9/13;border:1px dashed var(--line);background:rgba(139,92,246,.06);
@@ -124,6 +120,11 @@
   #admin .arow.off{opacity:.45}
   #admin .arow span{font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #admin .arow i{display:block;font-style:normal;font-size:11px;color:var(--muted);font-weight:500;margin-top:2px}
+  #admin .asel{background:var(--ink-3);border:1px solid var(--line);color:var(--text);
+    border-radius:10px;padding:8px 10px;font-family:inherit;font-size:13px;font-weight:600;max-width:130px}
+  #admin .asel.wide{max-width:none;width:100%;padding:12px 14px;font-size:15px}
+  #admin .arow2{display:flex;gap:8px;margin-bottom:9px}
+  #admin .af.mini{margin:0;flex:1 1 40%}
   #admin .anav{display:flex;align-items:center;gap:6px;flex:0 0 auto}
   #admin .amv{background:var(--ink-3);border:1px solid var(--line);color:var(--text);
     border-radius:9px;width:32px;height:30px;font-size:11px;font-family:inherit;cursor:pointer}
@@ -410,7 +411,7 @@ const css=c=>"rgb("+c[0]+","+c[1]+","+c[2]+")";
    resimler.js içindeki resimlerle çalışır (eski davranış).
    Örnek: "https://kullaniciadin.github.io/boyama/katalog.json"        */
 const CATALOG_URL="https://safaksengul.github.io/boyama/katalog.json";
-let remote={ekle:[],kaldir:[],kats:[]};
+let remote={ekle:[],kaldir:[],kats:[],kmap:{}};
 
 async function loadCatalog(){
   const cached=await store.get("cat:data");
@@ -433,7 +434,8 @@ async function loadCatalog(){
     }));
     remote={ekle:ekle,
             kaldir:(j.kaldir||[]).map(x=>String(x).slice(0,24)),
-            kats:(j.kategoriler||[]).map(x=>String(x).slice(0,18)).filter(Boolean)};
+            kats:(j.kategoriler||[]).map(x=>String(x).slice(0,18)).filter(Boolean),
+            kmap:(j.kategori&&typeof j.kategori==="object")?j.kategori:{}};
     await store.set("cat:data",remote);
   }catch(e){/* internet yoksa önbellekteki listeyle devam */}
 }
@@ -465,7 +467,7 @@ async function allItems(){
   for(const o of out){
     const st=await store.get("pbn:"+o.id);
     o.pct=(st&&st.n)?Math.round(st.d/st.n*100):0;
-    o.cat=o.base;
+    o.cat=(remote.kmap&&remote.kmap[o.id])||o.base;
     o.hid=hiddenIds.indexOf(o.id)>=0;
   }
   return out.filter(o=>remote.kaldir.indexOf(o.id)<0);
@@ -521,8 +523,7 @@ async function renderGallery(){
     let extra='<i class="more" title="Seçenekler">⋯</i>';
     if(it.pct>0&&it.pct<100)
       extra+='<i class="fillmask" style="height:'+it.pct+'%"></i><i class="badge">%'+it.pct+'</i>';
-    b.innerHTML='<img src="'+it.d+'" alt="" style="object-position:'+(it.p||"50% 25%")+'">'+
-      '<span>'+it.t+'</span>'+extra;
+    b.innerHTML='<img src="'+it.d+'" alt="'+it.t+'" style="object-position:'+(it.p||"50% 25%")+'">'+extra;
     b.onclick=e=>{
       if(e.target.classList.contains("more")){cardMenu(it);return;}
       loadSrc(it.d,it.id);
@@ -593,7 +594,8 @@ async function ghPut(path,contentB64,msg,tok){
 function openAdmin(){
   const draft={ekle:remote.ekle.map(x=>({id:x.id.replace(/^r/,""),t:x.t,k:x.k,u:x.u,p:x.p})),
                kaldir:remote.kaldir.slice(),
-               kategoriler:(remote.kats||[]).slice()};
+               kategoriler:(remote.kats||[]).slice(),
+               kategori:Object.assign({},remote.kmap||{})};
   const w=document.createElement("div");
   w.id="admin";
   w.innerHTML=
@@ -602,7 +604,8 @@ function openAdmin(){
       '<h5>Yeni resim ekle</h5>'+
       '<input class="af" id="aId" placeholder="kısa kimlik (kaplan01)">'+
       '<input class="af" id="aT" placeholder="başlık (Kaplan)">'+
-      '<input class="af" id="aK" placeholder="kategori (Hayvanlar)">'+
+      '<div class="arow2"><select class="asel wide" id="aKsel"></select>'+
+      '<input class="af mini" id="aK" placeholder="yeni kategori" hidden></div>'+
       '<input class="af" id="aU" placeholder="https://... resim adresi">'+
       '<button class="abtn" id="aPick">Bilgisayardan resim seç ve yükle</button>'+
       '<input type="file" id="aFile" accept="image/*" hidden>'+
@@ -626,7 +629,28 @@ function openAdmin(){
     '</div>';
   document.body.appendChild(w);
 
-  const json=()=>JSON.stringify({kategoriler:draft.kategoriler,ekle:draft.ekle,kaldir:draft.kaldir},null,2);
+  const json=()=>JSON.stringify({kategoriler:draft.kategoriler,kategori:draft.kategori,
+    ekle:draft.ekle,kaldir:draft.kaldir},null,2);
+  /* bilinen tüm kategoriler */
+  function allCats(){
+    const a=[];
+    draft.kategoriler.forEach(c=>{if(a.indexOf(c)<0)a.push(c);});
+    PRESETS.forEach(p=>{const k=p.k||"Diğer";if(a.indexOf(k)<0)a.push(k);});
+    draft.ekle.forEach(x=>{if(x.k&&a.indexOf(x.k)<0)a.push(x.k);});
+    for(const k in draft.kategori){const v=draft.kategori[k];if(v&&a.indexOf(v)<0)a.push(v);}
+    return a;
+  }
+  function catSelect(cur,onch){
+    const sel=document.createElement("select");
+    sel.className="asel";
+    allCats().forEach(c=>{
+      const op=document.createElement("option");op.value=c;op.textContent=c;
+      if(c===cur)op.selected=true;
+      sel.appendChild(op);
+    });
+    sel.onchange=()=>onch(sel.value);
+    return sel;
+  }
   function paint(){
     const K=w.querySelector("#aKats");K.innerHTML="";
     if(!draft.kategoriler.length)K.innerHTML='<p class="amut">Sıra belirlenmemiş.</p>';
@@ -647,16 +671,25 @@ function openAdmin(){
     if(!draft.ekle.length)L.innerHTML='<p class="amut">Henüz uzak resim yok.</p>';
     draft.ekle.forEach((x,i)=>{
       const r=document.createElement("div");r.className="arow";
-      r.innerHTML='<span>'+x.t+'<i>'+x.k+'</i></span>';
+      r.innerHTML='<span>'+x.t+'<i>uzak · '+x.id+'</i></span>';
+      const nav=document.createElement("div");nav.className="anav";
+      nav.appendChild(catSelect(x.k,v=>{x.k=v;paint();}));
       const b=document.createElement("button");b.className="adel";b.textContent="Sil";
       b.onclick=()=>{draft.ekle.splice(i,1);paint();};
-      r.appendChild(b);L.appendChild(r);
+      nav.appendChild(b);r.appendChild(nav);L.appendChild(r);
     });
     const P=w.querySelector("#aPre");P.innerHTML="";
     PRESETS.forEach((p,i)=>{
       const id="p"+i,off=draft.kaldir.indexOf(id)>=0;
+      const cur=draft.kategori[id]||p.k||"Diğer";
       const r=document.createElement("div");r.className="arow"+(off?" off":"");
-      r.innerHTML='<span>'+p.t+'<i>'+(p.k||"Diğer")+' · '+id+'</i></span>';
+      r.innerHTML='<span>'+p.t+'<i>'+id+'</i></span>';
+      const nav=document.createElement("div");nav.className="anav";
+      nav.appendChild(catSelect(cur,v=>{
+        if(v===(p.k||"Diğer"))delete draft.kategori[id];
+        else draft.kategori[id]=v;
+        paint();
+      }));
       const b=document.createElement("button");
       b.className="adel"+(off?" on":"");b.textContent=off?"Geri al":"Kaldır";
       b.onclick=()=>{
@@ -664,12 +697,29 @@ function openAdmin(){
         else draft.kaldir.push(id);
         paint();
       };
-      r.appendChild(b);P.appendChild(r);
+      nav.appendChild(b);r.appendChild(nav);P.appendChild(r);
     });
+    const ks=w.querySelector("#aKsel");
+    if(ks){
+      const keep=ks.value;
+      ks.innerHTML="";
+      allCats().forEach(c=>{
+        const op=document.createElement("option");op.value=c;op.textContent=c;ks.appendChild(op);
+      });
+      const nw=document.createElement("option");nw.value="__yeni";nw.textContent="＋ yeni kategori yaz";
+      ks.appendChild(nw);
+      if(keep)ks.value=keep;
+    }
     w.querySelector("#aJson").value=json();
   }
   paint();
 
+  w.querySelector("#aKsel").onchange=()=>{
+    const nw=w.querySelector("#aKsel").value==="__yeni";
+    const box=w.querySelector("#aK");
+    box.hidden=!nw;
+    if(nw)box.focus();
+  };
   w.querySelector("#aKatAdd").onclick=()=>{
     const el=w.querySelector("#aKat"),c=el.value.trim().slice(0,18);
     if(!c)return;
@@ -678,9 +728,12 @@ function openAdmin(){
   };
   w.querySelector("#aAdd").onclick=()=>{
     const g=k=>w.querySelector(k).value.trim();
-    const id=g("#aId").replace(/[^\w-]/g,""),t=g("#aT"),k=g("#aK"),u=g("#aU");
+    const sel=w.querySelector("#aKsel").value;
+    const id=g("#aId").replace(/[^\w-]/g,""),t=g("#aT"),u=g("#aU");
+    const k=(sel==="__yeni")?g("#aK"):sel;
     if(!id||!u||!/^https:\/\//.test(u)){toast("Kimlik ve https adresi şart");return;}
     if(draft.ekle.some(x=>x.id===id)){toast("Bu kimlik zaten var");return;}
+    if(k&&draft.kategoriler.indexOf(k)<0&&!PRESETS.some(pp=>(pp.k||"Diğer")===k))draft.kategoriler.push(k);
     draft.ekle.push({id:id,t:t||"Resim",k:k||"Yeni",u:u,p:"50% 25%"});
     ["#aId","#aT","#aK","#aU"].forEach(s=>w.querySelector(s).value="");
     paint();toast("Eklendi");
@@ -697,7 +750,8 @@ function openAdmin(){
   };
   w.querySelector("#aTry").onclick=async()=>{
     remote={ekle:draft.ekle.map(x=>({id:"r"+x.id,t:x.t,k:x.k,u:x.u,p:x.p||"50% 25%"})),
-            kaldir:draft.kaldir.slice(),kats:draft.kategoriler.slice()};
+            kaldir:draft.kaldir.slice(),kats:draft.kategoriler.slice(),
+            kmap:Object.assign({},draft.kategori)};
     await store.set("cat:data",remote);
     await renderGallery();
     toast("Bu cihazda uygulandı");
@@ -736,7 +790,8 @@ function openAdmin(){
       await store.set("admin:tok",tok());
       await ghPut("katalog.json",b64(json()),"katalog güncellendi",tok());
       remote={ekle:draft.ekle.map(x=>({id:"r"+x.id,t:x.t,k:x.k,u:x.u,p:x.p||"50% 25%"})),
-              kaldir:draft.kaldir.slice(),kats:draft.kategoriler.slice()};
+              kaldir:draft.kaldir.slice(),kats:draft.kategoriler.slice(),
+              kmap:Object.assign({},draft.kategori)};
       await store.set("cat:data",remote);
       await renderGallery();
       busy(false);toast("Yayınlandı");
