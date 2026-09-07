@@ -3,7 +3,8 @@
     "Fantastik",
     "Savaşcı",
     "Araba",
-    "Hayvan"
+    "Hayvan",
+    "Uzay"
   ],
   "kategori": {},
   "ekle": [
@@ -50,7 +51,7 @@
     {
       "id": "uzay-01-mt42",
       "t": "uzay 01",
-      "k": "Fantastik",
+      "k": "Uzay",
       "u": "https://safaksengul.github.io/boyama/resim/uzay-01-mt42.jpg",
       "o": "https://safaksengul.github.io/boyama/resim/uzay-01-mt42-cizim.jpg?v=mtrsmx1q",
       "kilit": false,
