@@ -124,6 +124,9 @@
   #admin .arow.off{opacity:.45}
   #admin .arow span{font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #admin .arow i{display:block;font-style:normal;font-size:11px;color:var(--muted);font-weight:500;margin-top:2px}
+  #admin .anav{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+  #admin .amv{background:var(--ink-3);border:1px solid var(--line);color:var(--text);
+    border-radius:9px;width:32px;height:30px;font-size:11px;font-family:inherit;cursor:pointer}
   #admin .adel{flex:0 0 auto;background:transparent;border:1px solid rgba(255,120,120,.5);color:#ff8b8b;
     border-radius:99px;padding:7px 13px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
   #admin .adel.on{border-color:rgba(120,255,180,.5);color:#7ef0b4}
@@ -407,7 +410,7 @@ const css=c=>"rgb("+c[0]+","+c[1]+","+c[2]+")";
    resimler.js içindeki resimlerle çalışır (eski davranış).
    Örnek: "https://kullaniciadin.github.io/boyama/katalog.json"        */
 const CATALOG_URL="https://safaksengul.github.io/boyama/katalog.json";
-let remote={ekle:[],kaldir:[]};
+let remote={ekle:[],kaldir:[],kats:[]};
 
 async function loadCatalog(){
   const cached=await store.get("cat:data");
@@ -428,20 +431,20 @@ async function loadCatalog(){
       u:String(x.u),
       p:String(x.p||"50% 25%").slice(0,20)
     }));
-    remote={ekle:ekle,kaldir:(j.kaldir||[]).map(x=>String(x).slice(0,24))};
+    remote={ekle:ekle,
+            kaldir:(j.kaldir||[]).map(x=>String(x).slice(0,24)),
+            kats:(j.kategoriler||[]).map(x=>String(x).slice(0,18)).filter(Boolean)};
     await store.set("cat:data",remote);
   }catch(e){/* internet yoksa önbellekteki listeyle devam */}
 }
 
 /* ---------- galeri ---------- */
 let tab="all";
-let hiddenIds=[],ucats=[],catof={};
+let hiddenIds=[];
 const dayNo=()=>Math.floor((Date.now()-new Date().getTimezoneOffset()*6e4)/864e5);
 
 async function loadPrefs(){
   hiddenIds=(await store.get("hidden"))||[];
-  ucats=(await store.get("cats"))||[];
-  catof=(await store.get("catof"))||{};
 }
 async function buildGallery(){
   await loadPrefs();
@@ -462,7 +465,7 @@ async function allItems(){
   for(const o of out){
     const st=await store.get("pbn:"+o.id);
     o.pct=(st&&st.n)?Math.round(st.d/st.n*100):0;
-    o.cat=catof[o.id]||o.base;
+    o.cat=o.base;
     o.hid=hiddenIds.indexOf(o.id)>=0;
   }
   return out.filter(o=>remote.kaldir.indexOf(o.id)<0);
@@ -489,10 +492,15 @@ async function renderGallery(){
   const vis=all.filter(i=>!i.hid);
   const open=vis.filter(i=>i.pct<100),fin=vis.filter(i=>i.pct>=100),hid=all.filter(i=>i.hid);
 
-  const cats=[];
-  open.forEach(i=>{if(cats.indexOf(i.cat)<0)cats.push(i.cat);});
-  ucats.forEach(c=>{if(cats.indexOf(c)<0)cats.push(c);});
-  const tabs=[{k:"all",l:"Tümü"}].concat(cats.map(c=>({k:c,l:c,mine:ucats.indexOf(c)>=0})));
+  const present=[];
+  open.forEach(i=>{if(present.indexOf(i.cat)<0)present.push(i.cat);});
+  const kats=remote.kats||[];
+  const listed=kats.filter(c=>present.indexOf(c)>=0);
+  const rest=present.filter(c=>kats.indexOf(c)<0);
+  const yi=rest.indexOf("Yeni");
+  if(yi>0)rest.unshift(rest.splice(yi,1)[0]);   /* "Yeni" hep en başta */
+  const cats=(kats.length?listed.concat(rest):rest.concat(listed));
+  const tabs=[{k:"all",l:"Tümü"}].concat(cats.map(c=>({k:c,l:c})));
   if(fin.length)tabs.push({k:"done",l:"Bitenler "+fin.length});
   if(hid.length)tabs.push({k:"hid",l:"Gizli "+hid.length});
   if(!tabs.some(t=>t.k===tab))tab="all";
@@ -502,19 +510,9 @@ async function renderGallery(){
     const b=document.createElement("button");
     b.textContent=t.l;
     if(t.k===tab)b.classList.add("on");
-    if(t.mine&&t.k===tab){
-      const x=document.createElement("i");x.className="tx";x.textContent="✕";
-      x.onclick=e=>{e.stopPropagation();delCat(t.k);};
-      b.appendChild(x);
-    }
     b.onclick=()=>{tab=t.k;renderGallery();};
     tb.appendChild(b);
   });
-  const add=document.createElement("button");
-  add.className="addcat";add.textContent="+ Kategori";
-  add.onclick=()=>newCat();
-  tb.appendChild(add);
-
   const list=tab==="done"?fin:tab==="hid"?hid:open.filter(i=>tab==="all"||i.cat===tab);
   const g=$("#gallery");g.innerHTML="";
   list.forEach(it=>{
@@ -543,53 +541,6 @@ async function renderGallery(){
   em.textContent=tab==="hid"?"Gizlenmiş resim yok.":"Bu bölümde henüz resim yok.";
 }
 
-/* ---------- resmin tarzını tahmin et ---------- */
-function styleGuess(src){
-  return new Promise(res=>{
-    const im=new Image();
-    im.onerror=()=>res("Fotoğraf");
-    im.onload=()=>{
-      try{
-        const S=72,cv=document.createElement("canvas");
-        cv.width=S;cv.height=S;
-        const cx=cv.getContext("2d",{willReadFrequently:true});
-        cx.drawImage(im,0,0,S,S);
-        const d=cx.getImageData(0,0,S,S).data,n=S*S;
-        const set=new Set();let sat=0,gray=0,flat=0;
-        for(let i=0;i<n;i++){
-          const r=d[i*4],g=d[i*4+1],b=d[i*4+2];
-          const mx=Math.max(r,g,b),mn=Math.min(r,g,b);
-          sat+=(mx-mn)/(mx||1);
-          if(mx-mn<16)gray++;
-          set.add(((r>>4)<<8)|((g>>4)<<4)|(b>>4));
-        }
-        for(let y=1;y<S;y++)for(let x=1;x<S;x++){
-          const i=(y*S+x)*4,j=(y*S+x-1)*4;
-          if(Math.abs(d[i]-d[j])+Math.abs(d[i+1]-d[j+1])+Math.abs(d[i+2]-d[j+2])<9)flat++;
-        }
-        sat/=n;
-        const grayR=gray/n,colors=set.size,flatR=flat/((S-1)*(S-1));
-        if(grayR>.88)res("Siyah-Beyaz");
-        else if(colors<170&&flatR>.55)res("Çizim");
-        else res("Fotoğraf");
-      }catch(e){res("Fotoğraf");}
-    };
-    im.src=src;
-  });
-}
-/* eklenen resim için kategori sor, tarzına uyanı öner */
-function askCat(guess,done){
-  const names=[];
-  PRESETS.forEach(p=>{const k=p.k||"Diğer";if(names.indexOf(k)<0)names.push(k);});
-  ucats.forEach(c=>{if(names.indexOf(c)<0)names.push(c);});
-  const o=[{l:"✦  "+guess+"  (önerilen)",fn:()=>done(guess)},{l:"Benim",fn:()=>done("Benim")}];
-  names.forEach(nm=>{if(nm!==guess)o.push({l:nm,fn:()=>done(nm)});});
-  o.push({l:"+  Yeni kategori…",fn:()=>{
-    const nn=(prompt("Yeni kategori adı:")||"").trim().slice(0,18);
-    done(nn||guess);
-  }});
-  sheet("Bu resim hangi bölüme gitsin?",o,()=>done(guess));
-}
 
 
 /* ---------- yönetici paneli (yalnızca sana) ----------
@@ -641,7 +592,8 @@ async function ghPut(path,contentB64,msg,tok){
 
 function openAdmin(){
   const draft={ekle:remote.ekle.map(x=>({id:x.id.replace(/^r/,""),t:x.t,k:x.k,u:x.u,p:x.p})),
-               kaldir:remote.kaldir.slice()};
+               kaldir:remote.kaldir.slice(),
+               kategoriler:(remote.kats||[]).slice()};
   const w=document.createElement("div");
   w.id="admin";
   w.innerHTML=
@@ -655,6 +607,11 @@ function openAdmin(){
       '<button class="abtn" id="aPick">Bilgisayardan resim seç ve yükle</button>'+
       '<input type="file" id="aFile" accept="image/*" hidden>'+
       '<button class="abtn" id="aAdd">Listeye ekle</button>'+
+      '<h5>Kategori sırası</h5>'+
+      '<p class="amut">Sekmeler bu sırayla görünür. Listede olmayan kategoriler sona eklenir.</p>'+
+      '<input class="af" id="aKat" placeholder="kategori adı">'+
+      '<button class="abtn" id="aKatAdd">Kategori ekle</button>'+
+      '<div id="aKats"></div>'+
       '<h5>Uzak resimler</h5><div id="aList"></div>'+
       '<h5>Dahili resimler (resimler.js)</h5><div id="aPre"></div>'+
       '<h5>katalog.json</h5>'+
@@ -669,8 +626,23 @@ function openAdmin(){
     '</div>';
   document.body.appendChild(w);
 
-  const json=()=>JSON.stringify({ekle:draft.ekle,kaldir:draft.kaldir},null,2);
+  const json=()=>JSON.stringify({kategoriler:draft.kategoriler,ekle:draft.ekle,kaldir:draft.kaldir},null,2);
   function paint(){
+    const K=w.querySelector("#aKats");K.innerHTML="";
+    if(!draft.kategoriler.length)K.innerHTML='<p class="amut">Sıra belirlenmemiş.</p>';
+    draft.kategoriler.forEach((c,i)=>{
+      const r=document.createElement("div");r.className="arow";
+      r.innerHTML='<span>'+(i+1)+'. '+c+'</span>';
+      const nav=document.createElement("div");nav.className="anav";
+      const up=document.createElement("button");up.className="amv";up.textContent="▲";
+      up.onclick=()=>{if(i>0){const t=draft.kategoriler[i-1];draft.kategoriler[i-1]=c;draft.kategoriler[i]=t;paint();}};
+      const dn=document.createElement("button");dn.className="amv";dn.textContent="▼";
+      dn.onclick=()=>{if(i<draft.kategoriler.length-1){const t=draft.kategoriler[i+1];draft.kategoriler[i+1]=c;draft.kategoriler[i]=t;paint();}};
+      const dl=document.createElement("button");dl.className="adel";dl.textContent="Sil";
+      dl.onclick=()=>{draft.kategoriler.splice(i,1);paint();};
+      nav.appendChild(up);nav.appendChild(dn);nav.appendChild(dl);
+      r.appendChild(nav);K.appendChild(r);
+    });
     const L=w.querySelector("#aList");L.innerHTML="";
     if(!draft.ekle.length)L.innerHTML='<p class="amut">Henüz uzak resim yok.</p>';
     draft.ekle.forEach((x,i)=>{
@@ -698,6 +670,12 @@ function openAdmin(){
   }
   paint();
 
+  w.querySelector("#aKatAdd").onclick=()=>{
+    const el=w.querySelector("#aKat"),c=el.value.trim().slice(0,18);
+    if(!c)return;
+    if(draft.kategoriler.indexOf(c)>=0){toast("Bu kategori zaten listede");return;}
+    draft.kategoriler.push(c);el.value="";paint();
+  };
   w.querySelector("#aAdd").onclick=()=>{
     const g=k=>w.querySelector(k).value.trim();
     const id=g("#aId").replace(/[^\w-]/g,""),t=g("#aT"),k=g("#aK"),u=g("#aU");
@@ -719,7 +697,7 @@ function openAdmin(){
   };
   w.querySelector("#aTry").onclick=async()=>{
     remote={ekle:draft.ekle.map(x=>({id:"r"+x.id,t:x.t,k:x.k,u:x.u,p:x.p||"50% 25%"})),
-            kaldir:draft.kaldir.slice()};
+            kaldir:draft.kaldir.slice(),kats:draft.kategoriler.slice()};
     await store.set("cat:data",remote);
     await renderGallery();
     toast("Bu cihazda uygulandı");
@@ -758,7 +736,7 @@ function openAdmin(){
       await store.set("admin:tok",tok());
       await ghPut("katalog.json",b64(json()),"katalog güncellendi",tok());
       remote={ekle:draft.ekle.map(x=>({id:"r"+x.id,t:x.t,k:x.k,u:x.u,p:x.p||"50% 25%"})),
-              kaldir:draft.kaldir.slice()};
+              kaldir:draft.kaldir.slice(),kats:draft.kategoriler.slice()};
       await store.set("cat:data",remote);
       await renderGallery();
       busy(false);toast("Yayınlandı");
@@ -793,44 +771,10 @@ function sheet(title,opts,oncancel){
   requestAnimationFrame(()=>w.classList.add("on"));
 }
 function cardMenu(it){
-  const o=[{l:"Kategoriye taşı",fn:()=>moveMenu(it)},
-           {l:it.hid?"Gizlemeyi kaldır":"Galeriden gizle",fn:()=>toggleHide(it.id)}];
+  const o=[{l:it.hid?"Gizlemeyi kaldır":"Galeriden gizle",fn:()=>toggleHide(it.id)}];
   if(it.pct>0)o.push({l:"Boyamayı sıfırla",fn:()=>redo(it.id,it.t)});
   if(it.own)o.push({l:"Resmi sil",danger:true,fn:()=>delMine(it.id,it.t)});
   sheet(it.t,o);
-}
-function moveMenu(it){
-  const names=[];
-  PRESETS.forEach(p=>{const k=p.k||"Diğer";if(names.indexOf(k)<0)names.push(k);});
-  if(names.indexOf("Benim")<0)names.push("Benim");
-  ucats.forEach(c=>{if(names.indexOf(c)<0)names.push(c);});
-  const o=names.map(n=>({l:(n===it.cat?"✓  ":"")+n,fn:()=>setCat(it.id,n)}));
-  o.push({l:"+  Yeni kategori…",fn:()=>newCat(it.id)});
-  if(catof[it.id])o.push({l:"Varsayılan kategoriye dön",fn:()=>setCat(it.id,null)});
-  sheet("Kategori seç",o);
-}
-async function setCat(id,name){
-  if(name)catof[id]=name;else delete catof[id];
-  await store.set("catof",catof);
-  if(name&&ucats.indexOf(name)<0&&name!=="Benim"&&!PRESETS.some(p=>(p.k||"Diğer")===name)){
-    ucats.push(name);await store.set("cats",ucats);
-  }
-  if(name)tab=name;
-  renderGallery();
-}
-async function newCat(id){
-  const n=(prompt("Yeni kategori adı:")||"").trim().slice(0,18);
-  if(!n)return;
-  if(ucats.indexOf(n)<0){ucats.push(n);await store.set("cats",ucats);}
-  if(id)await setCat(id,n);
-  else{tab=n;renderGallery();}
-}
-async function delCat(name){
-  if(!confirm('"'+name+'" kategorisi silinsin mi? Resimler silinmez, eski kategorilerine döner.'))return;
-  ucats=ucats.filter(c=>c!==name);
-  for(const k in catof)if(catof[k]===name)delete catof[k];
-  await store.set("cats",ucats);await store.set("catof",catof);
-  tab="all";renderGallery();
 }
 async function toggleHide(id){
   const was=hiddenIds.indexOf(id)>=0;
@@ -888,11 +832,10 @@ $("#file").onchange=async e=>{
   busy(true,"Resim ekleniyor…");
   try{
     const d=await shrink(f);
-    const guess=await styleGuess(d);
     busy(false);
-    const base=f.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ").trim().slice(0,24)||guess;
+    const base=f.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ").trim().slice(0,24)||"Resmim";
     const t=((prompt("Resme bir ad ver:",base)||base).trim().slice(0,24))||base;
-    askCat(guess,async cat=>{
+    await (async()=>{
       busy(true,"Resim ekleniyor…");
       const id="u"+Date.now().toString(36);
       await store.set("img:"+id,{t:t,p:"50% 25%",d:d});
@@ -900,17 +843,10 @@ $("#file").onchange=async e=>{
       await store.set("myimgs",list);
       const chk=await store.get("img:"+id);
       if(!chk){busy(false);toast("Depolama dolu, resim kaydedilemedi");return;}
-      if(cat&&cat!=="Benim"){
-        catof[id]=cat;
-        await store.set("catof",catof);
-        if(ucats.indexOf(cat)<0&&!PRESETS.some(pp=>(pp.k||"Diğer")===cat)){
-          ucats.push(cat);await store.set("cats",ucats);
-        }
-        tab=cat;
-      }
+      tab="Benim";
       await renderGallery();
       loadSrc(d,id);
-    });
+    })();
   }catch(err){busy(false);toast("Resim eklenemedi");}
 };
 
