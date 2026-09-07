@@ -1,4 +1,12 @@
 {
-  "ekle": [],
+  "ekle": [
+    {
+      "id": "deneme01",
+      "t": "Deneme",
+      "k": "Test",
+      "u": "https://safaksengul.github.io/boyama/deneme.png",
+      "p": "50% 25%"
+    }
+  ],
   "kaldir": []
 }
