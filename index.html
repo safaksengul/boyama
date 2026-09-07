@@ -1353,7 +1353,7 @@ function openAdmin(){
     if(!renkli.length){toast("Renkli resim seçilmedi");return;}
     const sel=w.querySelector("#aKsel").value;
     const kat=(sel==="__yeni")?w.querySelector("#aK").value.trim():sel;
-    let ok=0,hata=0;
+    let ok=0,hata=0,ilkHata="";
     for(let i=0;i<renkli.length;i++){
       const f=renkli[i];
       busy(true,"Yükleniyor "+(i+1)+"/"+renkli.length+"…");
@@ -1374,13 +1374,22 @@ function openAdmin(){
                          u:GH.site+GH.dir+"/"+id+".jpg",o:o2,kilit:false,
                          p:"50% 25%",e:Date.now()});
         ok++;
-      }catch(err){hata++;}
+      }catch(err){
+        hata++;
+        if(!ilkHata)ilkHata=(err&&err.message)?err.message:String(err);
+      }
     }
     if(kat&&draft.kategoriler.indexOf(kat)<0&&!PRESETS.some(pp=>(pp.k||"Diğer")===kat))
       draft.kategoriler.push(kat);
     busy(false);paint();
-    toast(ok+" resim eklendi"+(hata?", "+hata+" tanesi olmadı":""));
-    if(ok)await publish();
+    if(!ok){
+      alert("Hiçbir resim yüklenemedi.\n\nHata: "+(ilkHata||"bilinmiyor")+
+            "\n\nSık sebepler: erişim anahtarı süresi dolmuş, anahtarın Contents izni "+
+            "yazma değil, ya da anahtar bu depoyu kapsamıyor.");
+      return;
+    }
+    toast(ok+" resim eklendi"+(hata?", "+hata+" tanesi olmadı: "+ilkHata:""));
+    await publish();
   };
 
   w.querySelector("#aFileRow").onchange=async e=>{
@@ -1415,8 +1424,23 @@ function openAdmin(){
               kmap:Object.assign({},draft.kategori)};
       await store.set("cat:data",remote);
       await renderGallery();
-      busy(false);toast("Yayınlandı");
-    }catch(err){busy(false);toast("Yayınlanamadı: "+err.message);}
+      /* gerçekten yazıldı mı, kataloğu geri okuyup doğrula */
+      let dogru=false;
+      for(let d=0;d<3&&!dogru;d++){
+        await new Promise(r=>setTimeout(r,d?2500:800));
+        try{
+          const rr=await fetch(CATALOG_URL+"?v="+Date.now(),{cache:"no-store"});
+          if(rr.ok){
+            const jj=await rr.json();
+            const say=(jj.ekle||[]).length;
+            if(say>=draft.ekle.length)dogru=true;
+          }
+        }catch(e2){}
+      }
+      busy(false);
+      toast(dogru?"Yayınlandı ve doğrulandı"
+                 :"Katalog yazıldı, yayına alınması birkaç dakika sürebilir");
+    }catch(err){busy(false);toast("Yayınlanamadı: "+(err.message||"bilinmeyen hata"));}
   }
   w.querySelector("#aPub").onclick=publish;
 
