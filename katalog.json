@@ -1,6 +1,18 @@
 {
-  "kategoriler": [],
+  "kategoriler": [
+    "Fantastik"
+  ],
   "kategori": {},
-  "ekle": [],
+  "ekle": [
+    {
+      "id": "rmtrhmr2k",
+      "t": "Korsan Gemisi",
+      "k": "Diğer",
+      "u": "https://safaksengul.github.io/boyama/resim/rmtrhmr2k.jpg",
+      "o": "https://safaksengul.github.io/boyama/resim/rmtrhmr2k-cizim.jpg",
+      "p": "50% 25%",
+      "e": 1788800534391
+    }
+  ],
   "kaldir": []
 }
