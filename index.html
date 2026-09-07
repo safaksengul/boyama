@@ -162,9 +162,7 @@
   .hero .go{display:inline-block;background:linear-gradient(180deg,var(--accent-2),var(--accent));
     color:#fff;border-radius:12px;padding:10px 18px;font-size:14px;font-weight:700;
     box-shadow:0 8px 22px rgba(139,92,246,.45)}
-  #tabs{position:sticky;top:calc(-4px - var(--safe-t));z-index:6;
-    display:flex;flex-wrap:wrap;gap:8px;padding:10px 0 12px;
-    background:var(--ink);box-shadow:0 10px 14px -10px rgba(0,0,0,.7)}
+  #tabs{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0 16px}
   #tabs button{position:relative;flex:1 1 84px;min-width:0;display:block;
     height:38px;line-height:36px;background:var(--ink-2);border:1px solid var(--line);color:var(--muted);
     border-radius:99px;padding:0 12px;font-size:14px;font-weight:700;letter-spacing:.1px;
@@ -204,6 +202,7 @@
     font-size:15px;font-weight:600;font-family:inherit;cursor:pointer}
   .sopt.danger{color:#ff8b8b}
   .sopt.cancel{text-align:center;background:transparent;color:var(--muted);margin-top:6px}
+  #mineNote{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.5}
   #empty{color:var(--muted);font-size:14px;text-align:center;padding:40px 10px}
   .card .redo{position:absolute;left:8px;top:8px;width:28px;height:28px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;font-style:normal;font-size:14px;
@@ -311,6 +310,7 @@
   </div>
   <button class="hero" id="hero"></button>
   <div id="tabs"></div>
+  <p id="mineNote" hidden>Buraya eklediğin resimler yalnızca bu cihazda kalır, kimseyle paylaşılmaz.</p>
   <div class="grid" id="gallery"></div>
   <div id="empty" hidden>Bu bölümde henüz resim yok.</div>
 </div>
@@ -502,9 +502,11 @@ async function renderGallery(){
   const vis=all.filter(i=>!i.hid);
   const open=vis.filter(i=>i.pct<100),fin=vis.filter(i=>i.pct>=100),hid=all.filter(i=>i.hid);
 
-  const fresh=open.filter(i=>i.fresh);
+  const mine=open.filter(i=>i.own);
+  const pub=open.filter(i=>!i.own);
+  const fresh=pub.filter(i=>i.fresh);
   const present=[];
-  open.forEach(i=>{if(present.indexOf(i.cat)<0)present.push(i.cat);});
+  pub.forEach(i=>{if(present.indexOf(i.cat)<0)present.push(i.cat);});
   const kats=remote.kats||[];
   const listed=kats.filter(c=>present.indexOf(c)>=0);
   const rest=present.filter(c=>kats.indexOf(c)<0);
@@ -512,6 +514,7 @@ async function renderGallery(){
   const tabs=[{k:"all",l:"Tümü"}];
   if(fresh.length)tabs.push({k:"new",l:"Yeni "+fresh.length});
   cats.forEach(c=>tabs.push({k:c,l:c}));
+  tabs.push({k:"mine",l:"Resmini ekle"});
   if(fin.length)tabs.push({k:"done",l:"Bitenler "+fin.length});
   if(hid.length)tabs.push({k:"hid",l:"Gizli "+hid.length});
   if(!tabs.some(t=>t.k===tab))tab="all";
@@ -524,9 +527,11 @@ async function renderGallery(){
     b.onclick=()=>{tab=t.k;renderGallery();};
     tb.appendChild(b);
   });
-  const list=tab==="done"?fin:tab==="hid"?hid:tab==="new"?fresh:
-             open.filter(i=>tab==="all"||i.cat===tab);
+  const list=tab==="done"?fin:tab==="hid"?hid:tab==="new"?fresh:tab==="mine"?mine:
+             pub.filter(i=>tab==="all"||i.cat===tab);
   const g=$("#gallery");g.innerHTML="";
+  const note=$("#mineNote");
+  if(note)note.hidden=tab!=="mine";
   list.forEach(it=>{
     const b=document.createElement("button");
     b.className="card"+(it.pct>=100?" fin":"")+(it.hid?" hid":"");
@@ -540,7 +545,7 @@ async function renderGallery(){
     };
     g.appendChild(b);
   });
-  if(tab!=="done"&&tab!=="hid"&&tab!=="new"){
+  if(tab==="mine"){
     const own=document.createElement("button");
     own.className="card own";
     own.innerHTML='<b>+</b>Resim ekle';
@@ -549,6 +554,7 @@ async function renderGallery(){
   }
   const em=$("#empty");
   em.hidden=list.length>0;
+  em.hidden=list.length>0||tab==="mine";
   em.textContent=tab==="hid"?"Gizlenmiş resim yok.":
                  tab==="new"?"Şu an yeni eklenen resim yok.":"Bu bölümde henüz resim yok.";
 }
@@ -916,7 +922,7 @@ $("#file").onchange=async e=>{
       await store.set("myimgs",list);
       const chk=await store.get("img:"+id);
       if(!chk){busy(false);toast("Depolama dolu, resim kaydedilemedi");return;}
-      tab="Benim";
+      tab="mine";
       await renderGallery();
       loadSrc(d,id);
     })();
