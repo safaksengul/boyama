@@ -614,6 +614,31 @@ let adTaps=0,adTapT;
   });
 })();
 
+/* GitHub deposu — panel buraya yazar */
+const GH={owner:"safaksengul",repo:"boyama",branch:"main",dir:"resim",
+          site:"https://safaksengul.github.io/boyama/"};
+const b64=str=>btoa(unescape(encodeURIComponent(str)));
+function ghHead(tok){return {Authorization:"Bearer "+tok,Accept:"application/vnd.github+json"};}
+function ghUrl(path){return "https://api.github.com/repos/"+GH.owner+"/"+GH.repo+"/contents/"+path;}
+async function ghSha(path,tok){
+  try{
+    const r=await fetch(ghUrl(path)+"?ref="+GH.branch,{headers:ghHead(tok),cache:"no-store"});
+    if(!r.ok)return null;
+    const j=await r.json();return j.sha||null;
+  }catch(e){return null;}
+}
+async function ghPut(path,contentB64,msg,tok){
+  const sha=await ghSha(path,tok);
+  const body={message:msg,content:contentB64,branch:GH.branch};
+  if(sha)body.sha=sha;
+  const r=await fetch(ghUrl(path),{method:"PUT",headers:ghHead(tok),body:JSON.stringify(body)});
+  if(!r.ok){
+    let m="";try{m=(await r.json()).message||"";}catch(e){}
+    throw new Error(r.status+" "+m);
+  }
+  return true;
+}
+
 function openAdmin(){
   const draft={ekle:remote.ekle.map(x=>({id:x.id.replace(/^r/,""),t:x.t,k:x.k,u:x.u,p:x.p})),
                kaldir:remote.kaldir.slice()};
@@ -627,6 +652,8 @@ function openAdmin(){
       '<input class="af" id="aT" placeholder="başlık (Kaplan)">'+
       '<input class="af" id="aK" placeholder="kategori (Hayvanlar)">'+
       '<input class="af" id="aU" placeholder="https://... resim adresi">'+
+      '<button class="abtn" id="aPick">Bilgisayardan resim seç ve yükle</button>'+
+      '<input type="file" id="aFile" accept="image/*" hidden>'+
       '<button class="abtn" id="aAdd">Listeye ekle</button>'+
       '<h5>Uzak resimler</h5><div id="aList"></div>'+
       '<h5>Dahili resimler (resimler.js)</h5><div id="aPre"></div>'+
@@ -635,6 +662,10 @@ function openAdmin(){
       '<button class="abtn" id="aCopy">Metni kopyala</button>'+
       '<button class="abtn" id="aDl">Dosya olarak indir</button>'+
       '<button class="abtn ok" id="aTry">Bu cihazda dene</button>'+
+      '<h5>Doğrudan yayınla</h5>'+
+      '<p class="amut">GitHub erişim anahtarını bir kez yaz; cihazında saklanır.</p>'+
+      '<input class="af" id="aTok" type="password" placeholder="github_pat_...">'+
+      '<button class="abtn ok" id="aPub">GitHub\'a yayınla</button>'+
     '</div>';
   document.body.appendChild(w);
 
@@ -693,6 +724,47 @@ function openAdmin(){
     await renderGallery();
     toast("Bu cihazda uygulandı");
   };
+  /* anahtar */
+  store.get("admin:tok").then(t=>{if(t)w.querySelector("#aTok").value=t;});
+  const tok=()=>w.querySelector("#aTok").value.trim();
+
+  /* resmi doğrudan depoya yükle */
+  w.querySelector("#aPick").onclick=()=>{
+    if(!tok()){toast("Önce erişim anahtarını yaz");return;}
+    w.querySelector("#aFile").click();
+  };
+  w.querySelector("#aFile").onchange=async e=>{
+    const f=e.target.files[0];e.target.value="";
+    if(!f)return;
+    const id=(w.querySelector("#aId").value.trim().replace(/[^\w-]/g,""))||("resim"+Date.now().toString(36));
+    busy(true,"Resim yükleniyor…");
+    try{
+      const d=await shrink(f);
+      await store.set("admin:tok",tok());
+      await ghPut(GH.dir+"/"+id+".jpg",d.split(",")[1],"resim: "+id,tok());
+      w.querySelector("#aId").value=id;
+      w.querySelector("#aU").value=GH.site+GH.dir+"/"+id+".jpg";
+      if(!w.querySelector("#aT").value.trim())
+        w.querySelector("#aT").value=f.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ").slice(0,24);
+      busy(false);toast("Yüklendi, şimdi \u201cListeye ekle\u201d de");
+    }catch(err){busy(false);toast("Yüklenemedi: "+err.message);}
+  };
+
+  /* katalogu doğrudan depoya yaz */
+  w.querySelector("#aPub").onclick=async()=>{
+    if(!tok()){toast("Erişim anahtarı gerekli");return;}
+    busy(true,"Yayınlanıyor…");
+    try{
+      await store.set("admin:tok",tok());
+      await ghPut("katalog.json",b64(json()),"katalog güncellendi",tok());
+      remote={ekle:draft.ekle.map(x=>({id:"r"+x.id,t:x.t,k:x.k,u:x.u,p:x.p||"50% 25%"})),
+              kaldir:draft.kaldir.slice()};
+      await store.set("cat:data",remote);
+      await renderGallery();
+      busy(false);toast("Yayınlandı");
+    }catch(err){busy(false);toast("Yayınlanamadı: "+err.message);}
+  };
+
   w.querySelector(".ax").onclick=()=>w.remove();
 }
 
