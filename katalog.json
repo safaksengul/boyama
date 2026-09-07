@@ -1,14 +1,14 @@
 {
   "kategoriler": [
-    "Yeni",
     "Araba"
   ],
+  "kategori": {},
   "ekle": [
     {
-      "id": "resimmtr9sizw",
+      "id": "resimmtrablog",
       "t": "lamborghini",
-      "k": "Yeni",
-      "u": "https://safaksengul.github.io/boyama/resim/resimmtr9sizw.jpg",
+      "k": "Araba",
+      "u": "https://safaksengul.github.io/boyama/resim/resimmtrablog.jpg",
       "p": "50% 25%"
     }
   ],
