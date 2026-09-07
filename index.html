@@ -1685,10 +1685,13 @@ async function build(){
   oc.imageSmoothingQuality="high";oc.drawImage(img,0,0,W,H);
   const orig=oc.getImageData(0,0,W,H).data;
 
+  busy(true,"Gürültü temizleniyor…");await frame();
+  const flt0=medianRGB(orig,W,H);
+
   let cizgiModu=false;
   if(lineImg){
     busy(true,"Çizim okunuyor…");await frame();
-    try{cizgiModu=lineArtSegment(orig);}catch(e){cizgiModu=false;}
+    try{cizgiModu=lineArtSegment(orig,flt0);}catch(e){cizgiModu=false;}
   }
   if(cizgiModu){
     busy(true,"Numaralar yerleştiriliyor…");await frame();
@@ -1699,11 +1702,9 @@ async function build(){
     return await buildFinish();
   }
 
-  busy(true,"Gürültü temizleniyor…");await frame();
-  const flt=medianRGB(orig,W,H);
-
+  K=K_DEF;
   busy(true,"Renkler seçiliyor…");await frame();
-  quantize(flt,orig);
+  quantize(flt0,orig);
 
   busy(true,"Bölgeler yuvarlanıyor…");await frame();
   modeDisc(2);await frame();
@@ -1875,7 +1876,7 @@ function modeDisc(rad){
 
 /* ---------- çizim tabanlı bölgeleme ----------
    Şekiller çizimin kapalı alanlarından, renkler renkli resimden gelir.  */
-function lineArtSegment(orig){
+function lineArtSegment(orig,flt){
   const N=W*H;
   const lc=document.createElement("canvas");lc.width=W;lc.height=H;
   const lx=lc.getContext("2d",{willReadFrequently:true});
@@ -1888,13 +1889,19 @@ function lineArtSegment(orig){
     const v=.299*ld[i*4]+.587*ld[i*4+1]+.114*ld[i*4+2];
     cizgi[i]=v<140?1:0;
   }
-  /* kapalı beyaz alanları etiketle */
+  /* renkli resmi paletle (bölgelerin rengi buradan gelir) */
+  K=26;
+  quantize(flt,orig);
+  const pIdx=palIdx;
+
+  /* kapalı alanları etiketle: sınır yalnızca çizgi */
   let rid=new Int32Array(N).fill(-1);
-  const stack=new Int32Array(N);
+  const stack=new Int32Array(N*2);
   let say=0;
   for(let i=0;i<N;i++){
     if(cizgi[i]||rid[i]!==-1)continue;
-    const id=say++;let sp=0;stack[sp++]=i;rid[i]=id;
+    const id=say++;
+    let sp=0;stack[sp++]=i;rid[i]=id;
     while(sp>0){
       const p=stack[--sp],x=p%W,y=(p-x)/W;
       if(x>0){const q=p-1;if(!cizgi[q]&&rid[q]===-1){rid[q]=id;stack[sp++]=q;}}
@@ -1940,6 +1947,93 @@ function lineArtSegment(orig){
     const p=y*W+x,a=rid[p];
     if(x<W-1){const b=rid[p+1];if(b!==a)baglа(a,b);}
     if(y<H-1){const b=rid[p+W];if(b!==a)baglа(a,b);}
+  }
+
+  /* --- geniş ve tonu değişen alanları birkaç parçaya böl (yüz, gökyüzü…) --- */
+  const bc2=document.createElement("canvas");bc2.width=W;bc2.height=H;
+  const bx=bc2.getContext("2d",{willReadFrequently:true});
+  bx.filter="blur("+Math.max(4,Math.round(W/100))+"px)";
+  bx.drawImage(origCv,0,0);
+  const bd=bx.getImageData(0,0,W,H).data;
+
+  {
+    const boy0=new Int32Array(say);
+    for(let i=0;i<N;i++)boy0[rid[i]]++;
+    const BOL_MIN=Math.round(N/150);
+    const gruplar=new Map();
+    for(let i=0;i<N;i++){
+      const a=rid[i];
+      if(boy0[a]<BOL_MIN)continue;
+      let g=gruplar.get(a);
+      if(!g){g=[];gruplar.set(a,g);}
+      g.push(i);
+    }
+    const yeniId=new Int32Array(N).fill(-1);
+    let sonraki=say;
+    gruplar.forEach(px=>{
+      /* ton farkı var mı */
+      let m0=0,m1=0,m2=0;
+      const adim=Math.max(1,Math.floor(px.length/3000));
+      let n0=0;
+      for(let k=0;k<px.length;k+=adim){const p=px[k];m0+=bd[p*4];m1+=bd[p*4+1];m2+=bd[p*4+2];n0++;}
+      m0/=n0;m1/=n0;m2/=n0;
+      let v=0;
+      for(let k=0;k<px.length;k+=adim){
+        const p=px[k];
+        v+=Math.abs(bd[p*4]-m0)+Math.abs(bd[p*4+1]-m1)+Math.abs(bd[p*4+2]-m2);
+      }
+      v/=(n0*3);
+      if(v<8)return;
+      const kk=Math.max(2,Math.min(4,Math.round(v/7)));
+      /* k-ortalama */
+      const cen=[];
+      for(let c=0;c<kk;c++){
+        const p=px[Math.floor(rnd()*px.length)];
+        cen.push([bd[p*4],bd[p*4+1],bd[p*4+2]]);
+      }
+      const ata=new Int32Array(px.length);
+      for(let it=0;it<8;it++){
+        for(let k=0;k<px.length;k++){
+          const p=px[k];let b0=0,bdst=Infinity;
+          for(let c=0;c<kk;c++){
+            const dx=bd[p*4]-cen[c][0],dy=bd[p*4+1]-cen[c][1],dz=bd[p*4+2]-cen[c][2];
+            const q=dx*dx+dy*dy+dz*dz;
+            if(q<bdst){bdst=q;b0=c;}
+          }
+          ata[k]=b0;
+        }
+        const acc=cen.map(()=>[0,0,0,0]);
+        for(let k=0;k<px.length;k++){
+          const p=px[k],a2=acc[ata[k]];
+          a2[0]+=bd[p*4];a2[1]+=bd[p*4+1];a2[2]+=bd[p*4+2];a2[3]++;
+        }
+        for(let c=0;c<kk;c++)if(acc[c][3])
+          cen[c]=[acc[c][0]/acc[c][3],acc[c][1]/acc[c][3],acc[c][2]/acc[c][3]];
+      }
+      const kume=new Map();
+      for(let k=0;k<px.length;k++)kume.set(px[k],ata[k]);
+      /* aynı kümedeki bitişik pikselleri yeni bölge yap */
+      for(let k=0;k<px.length;k++){
+        const i0=px[k];
+        if(yeniId[i0]!==-1)continue;
+        const c=kume.get(i0),id=sonraki++;
+        let sp=0;stack[sp++]=i0;yeniId[i0]=id;
+        while(sp>0){
+          const p=stack[--sp],x=p%W,y=(p-x)/W;
+          const dene=q=>{
+            if(yeniId[q]!==-1)return;
+            if(kume.get(q)!==c)return;
+            yeniId[q]=id;stack[sp++]=q;
+          };
+          if(x>0)dene(p-1);
+          if(x<W-1)dene(p+1);
+          if(y>0)dene(p-W);
+          if(y<H-1)dene(p+W);
+        }
+      }
+    });
+    for(let i=0;i<N;i++)if(yeniId[i]!==-1)rid[i]=yeniId[i];
+    say=sonraki;
   }
 
   /* --- her bölgenin en kalın yeri (numara sığar mı) --- */
@@ -2008,65 +2102,16 @@ function lineArtSegment(orig){
   }
   if(pxs.length<4)return false;
 
-  /* her bölgenin ortalama rengi -> palet */
-  const ort=[];
-  for(const px of pxs){
-    let r=0,g=0,b=0;
-    const adim=Math.max(1,Math.floor(px.length/400));
-    let n=0;
-    for(let k=0;k<px.length;k+=adim){const p=px[k];r+=orig[p*4];g+=orig[p*4+1];b+=orig[p*4+2];n++;}
-    ort.push([r/n,g/n,b/n]);
-  }
-  const KK=Math.max(4,Math.min(28,Math.round(Math.sqrt(pxs.length)*1.6)));
-  const lab=ort.map(c=>rgb2lab(c[0],c[1],c[2]));
-  const cen=[];
-  cen.push(lab[(rnd()*lab.length)|0].slice());
-  while(cen.length<KK){
-    let bi=0,bd=-1;
-    for(let i=0;i<lab.length;i++){
-      let d=Infinity;
-      for(const c of cen){
-        const q=(lab[i][0]-c[0])**2+(lab[i][1]-c[1])**2+(lab[i][2]-c[2])**2;
-        if(q<d)d=q;
-      }
-      if(d>bd){bd=d;bi=i;}
-    }
-    cen.push(lab[bi].slice());
-  }
-  const ata=new Int32Array(lab.length);
-  for(let it=0;it<14;it++){
-    for(let i=0;i<lab.length;i++){
-      let bc=0,bd=Infinity;
-      for(let c=0;c<cen.length;c++){
-        const q=(lab[i][0]-cen[c][0])**2+(lab[i][1]-cen[c][1])**2+(lab[i][2]-cen[c][2])**2;
-        if(q<bd){bd=q;bc=c;}
-      }
-      ata[i]=bc;
-    }
-    const s0=cen.map(()=>[0,0,0,0]);
-    for(let i=0;i<lab.length;i++){
-      const w=pxs[i].length,a=s0[ata[i]];
-      a[0]+=lab[i][0]*w;a[1]+=lab[i][1]*w;a[2]+=lab[i][2]*w;a[3]+=w;
-    }
-    for(let c=0;c<cen.length;c++)if(s0[c][3])
-      cen[c]=[s0[c][0]/s0[c][3],s0[c][1]/s0[c][3],s0[c][2]/s0[c][3]];
-  }
-  const topla=cen.map(()=>[0,0,0,0]);
-  for(let i=0;i<ort.length;i++){
-    const w=pxs[i].length,a=topla[ata[i]];
-    a[0]+=ort[i][0]*w;a[1]+=ort[i][1]*w;a[2]+=ort[i][2]*w;a[3]+=w;
-  }
-  K=cen.length;
-  palette=topla.map(a=>a[3]
-    ? [Math.round(a[0]/a[3]),Math.round(a[1]/a[3]),Math.round(a[2]/a[3])]
-    : [128,128,128]);
-  palLab=palette.map(c=>rgb2lab(c[0],c[1],c[2]));
-
+  /* her bölgenin rengi: içindeki baskın palet indisi */
   palIdx=new Uint8Array(N);
   regions=[];regionId=rid;
-  for(let i=0;i<pxs.length;i++){
-    const c=ata[i];
-    const arr=Int32Array.from(pxs[i]);
+  const sayac=new Int32Array(K);
+  for(const px of pxs){
+    sayac.fill(0);
+    for(let k=0;k<px.length;k++)sayac[pIdx[px[k]]]++;
+    let c=0,bc=-1;
+    for(let j=0;j<K;j++)if(sayac[j]>bc){bc=sayac[j];c=j;}
+    const arr=Int32Array.from(px);
     for(let k=0;k<arr.length;k++)palIdx[arr[k]]=c;
     regions.push({color:c,pixels:arr,size:arr.length,filled:false});
   }
