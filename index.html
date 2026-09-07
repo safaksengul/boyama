@@ -850,26 +850,49 @@ function boxBlur(src,W,H,r){
   return out;
 }
 function sketchOf(im){
-  const W=280,H=Math.max(1,Math.round(W*im.naturalHeight/(im.naturalWidth||1)));
+  const W=380,H=Math.max(1,Math.round(W*im.naturalHeight/(im.naturalWidth||1)));
   const cv=document.createElement("canvas");cv.width=W;cv.height=H;
   const cx=cv.getContext("2d",{willReadFrequently:true});
   cx.drawImage(im,0,0,W,H);
   const d=cx.getImageData(0,0,W,H),p=d.data,n=W*H;
-  const g=new Float32Array(n),inv=new Float32Array(n);
+
+  let g=new Float32Array(n);
+  for(let i=0;i<n;i++)g[i]=.299*p[i*4]+.587*p[i*4+1]+.114*p[i*4+2];
+
+  /* önce hafif yumuşat: doku ve gürültü çizgiye dönüşmesin */
+  g=boxBlur(g,W,H,1);
+
+  /* otomatik seviye: en koyu ve en açık uçları gerçek siyah-beyaza yay */
+  const hist=new Uint32Array(256);
+  for(let i=0;i<n;i++)hist[g[i]|0]++;
+  let lo=0,hi=255,acc=0;
+  for(let v=0;v<256;v++){acc+=hist[v];if(acc>n*.02){lo=v;break;}}
+  acc=0;
+  for(let v=255;v>=0;v--){acc+=hist[v];if(acc>n*.02){hi=v;break;}}
+  const span=Math.max(24,hi-lo);
   for(let i=0;i<n;i++){
-    const v=.299*p[i*4]+.587*p[i*4+1]+.114*p[i*4+2];
-    g[i]=v;inv[i]=255-v;
+    let v=(g[i]-lo)*255/span;
+    g[i]=v<0?0:v>255?255:v;
   }
-  const bl=boxBlur(inv,W,H,5);
+
+  /* karakalem: gri ile ters-bulanık kopyanın renk açma harmanı */
+  const inv=new Float32Array(n);
+  for(let i=0;i<n;i++)inv[i]=255-g[i];
+  const r=Math.max(3,Math.round(W/48));
+  const bl=boxBlur(inv,W,H,r);
+
   for(let i=0;i<n;i++){
     const b=bl[i];
-    let v=b>=254.5?255:g[i]*255/(255-b);
-    v=(v-128)*1.3+138;                       /* kontrastı biraz aç */
+    let v=b>=254?255:g[i]*255/(255-b);
+    v=v>255?255:v;
+    /* açık tonları tamamen beyaza it, çizgileri koyulaştır */
+    if(v>236)v=255;
+    else v=255-Math.pow((255-v)/255,.72)*255*1.15;
     v=v<0?0:v>255?255:v;
     p[i*4]=p[i*4+1]=p[i*4+2]=v;p[i*4+3]=255;
   }
   cx.putImageData(d,0,0);
-  return cv.toDataURL("image/jpeg",.82);
+  return cv.toDataURL("image/jpeg",.86);
 }
 function runSketch(){
   sBusy=true;
