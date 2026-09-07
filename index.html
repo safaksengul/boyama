@@ -892,7 +892,7 @@ function setHero(list){
     '<span class="veilg"></span>'+
     '<span class="txt"><span class="tag">GÜNÜN RESMİ</span><h3>'+it.t+'</h3>'+
     '<span class="go">Boyamaya başla</span></span>';
-  h.onclick=()=>loadSrc(it.d,it.id);
+  h.onclick=()=>loadSrc(it.d,it.id,it.prev||"");
 }
 
 async function renderGallery(){
@@ -968,7 +968,7 @@ async function renderGallery(){
     b.onclick=e=>{
       if(e.target.classList.contains("more")){cardMenu(it);return;}
       if(kilitli){openShop(it.id);return;}
-      loadSrc(it.d,it.id);
+      loadSrc(it.d,it.id,it.prev||"");
     };
     g.appendChild(b);
   });
@@ -1610,12 +1610,24 @@ async function shrink(file){
   return c.toDataURL("image/jpeg",0.82);
 }
 /* ---------- resim açma ---------- */
-function loadSrc(src,id){
+let lineImg=null;
+function loadSrc(src,id,lineSrc){
   curId=id||("x"+src.length);
   busy(true,"Resim okunuyor…");
+  lineImg=null;
+  const basla=()=>build();
   const im=new Image();
   if(src.slice(0,5)!=="data:")im.crossOrigin="anonymous";
-  im.onload=async()=>{img=im;await build();};
+  im.onload=async()=>{
+    img=im;
+    if(lineSrc){
+      const li=new Image();
+      if(lineSrc.slice(0,5)!=="data:")li.crossOrigin="anonymous";
+      li.onload=async()=>{lineImg=li;await basla();};
+      li.onerror=async()=>{lineImg=null;await basla();};
+      li.src=lineSrc;
+    }else await basla();
+  };
   im.onerror=()=>{busy(false);toast("Resim indirilemedi, bağlantını kontrol et");};
   im.src=src;
 }
@@ -1673,6 +1685,20 @@ async function build(){
   oc.imageSmoothingQuality="high";oc.drawImage(img,0,0,W,H);
   const orig=oc.getImageData(0,0,W,H).data;
 
+  let cizgiModu=false;
+  if(lineImg){
+    busy(true,"Çizim okunuyor…");await frame();
+    try{cizgiModu=lineArtSegment(orig);}catch(e){cizgiModu=false;}
+  }
+  if(cizgiModu){
+    busy(true,"Numaralar yerleştiriliyor…");await frame();
+    placeNumbers();
+    busy(true,"Kenarlar çiziliyor…");await frame();
+    let m=0;
+    for(const r of regions){buildPath(r);r.pixels=null;if(++m%200===0)await frame();}
+    return await buildFinish();
+  }
+
   busy(true,"Gürültü temizleniyor…");await frame();
   const flt=medianRGB(orig,W,H);
 
@@ -1703,6 +1729,10 @@ async function build(){
   let n=0;
   for(const r of regions){buildPath(r);r.pixels=null;if(++n%200===0)await frame();}
 
+  return await buildFinish();
+}
+
+async function buildFinish(){
   texCv=document.createElement("canvas");texCv.width=W;texCv.height=H;
   texCtx=texCv.getContext("2d");texCtx.clearRect(0,0,W,H);
   makeTile();
@@ -1841,6 +1871,171 @@ function modeDisc(rad){
     out[y*W+x]=best;
   }
   palIdx=out;
+}
+
+/* ---------- çizim tabanlı bölgeleme ----------
+   Şekiller çizimin kapalı alanlarından, renkler renkli resimden gelir.  */
+function lineArtSegment(orig){
+  const N=W*H;
+  const lc=document.createElement("canvas");lc.width=W;lc.height=H;
+  const lx=lc.getContext("2d",{willReadFrequently:true});
+  lx.fillStyle="#fff";lx.fillRect(0,0,W,H);
+  lx.imageSmoothingQuality="high";lx.drawImage(lineImg,0,0,W,H);
+  const ld=lx.getImageData(0,0,W,H).data;
+
+  const cizgi=new Uint8Array(N);
+  for(let i=0;i<N;i++){
+    const v=.299*ld[i*4]+.587*ld[i*4+1]+.114*ld[i*4+2];
+    cizgi[i]=v<140?1:0;
+  }
+  /* kapalı beyaz alanları etiketle */
+  let rid=new Int32Array(N).fill(-1);
+  const stack=new Int32Array(N);
+  let say=0;
+  for(let i=0;i<N;i++){
+    if(cizgi[i]||rid[i]!==-1)continue;
+    const id=say++;let sp=0;stack[sp++]=i;rid[i]=id;
+    while(sp>0){
+      const p=stack[--sp],x=p%W,y=(p-x)/W;
+      if(x>0){const q=p-1;if(!cizgi[q]&&rid[q]===-1){rid[q]=id;stack[sp++]=q;}}
+      if(x<W-1){const q=p+1;if(!cizgi[q]&&rid[q]===-1){rid[q]=id;stack[sp++]=q;}}
+      if(y>0){const q=p-W;if(!cizgi[q]&&rid[q]===-1){rid[q]=id;stack[sp++]=q;}}
+      if(y<H-1){const q=p+W;if(!cizgi[q]&&rid[q]===-1){rid[q]=id;stack[sp++]=q;}}
+    }
+  }
+  if(say<8)return false;   /* çizim okunamadı, eski yönteme dön */
+
+  /* çizgi piksellerini en yakın bölgeye kat (kenarlar boş kalmasın) */
+  let kuyruk=[];
+  for(let i=0;i<N;i++)if(rid[i]>=0){
+    const x=i%W,y=(i-x)/W;
+    if((x>0&&cizgi[i-1])||(x<W-1&&cizgi[i+1])||(y>0&&cizgi[i-W])||(y<H-1&&cizgi[i+W]))kuyruk.push(i);
+  }
+  while(kuyruk.length){
+    const yeni=[];
+    for(const p of kuyruk){
+      const x=p%W,y=(p-x)/W,id=rid[p];
+      if(x>0&&rid[p-1]===-1){rid[p-1]=id;yeni.push(p-1);}
+      if(x<W-1&&rid[p+1]===-1){rid[p+1]=id;yeni.push(p+1);}
+      if(y>0&&rid[p-W]===-1){rid[p-W]=id;yeni.push(p-W);}
+      if(y<H-1&&rid[p+W]===-1){rid[p+W]=id;yeni.push(p+W);}
+    }
+    kuyruk=yeni;
+  }
+  for(let i=0;i<N;i++)if(rid[i]<0)rid[i]=0;
+
+  /* küçük parçaları en çok komşu olduğu bölgeye kat */
+  const minAlan=Math.max(60,Math.round(N/6000));
+  for(let tur=0;tur<3;tur++){
+    const boy=new Int32Array(say);
+    for(let i=0;i<N;i++)boy[rid[i]]++;
+    const komsu=new Map();
+    let degisti=false;
+    const hedef=new Int32Array(say).fill(-1);
+    for(let i=0;i<N;i++){
+      const a=rid[i];
+      if(boy[a]>=minAlan)continue;
+      const x=i%W,y=(i-x)/W;
+      const bak=b=>{
+        if(b===a)return;
+        const k=a*1e6+b;
+        komsu.set(k,(komsu.get(k)||0)+1);
+      };
+      if(x>0)bak(rid[i-1]);
+      if(x<W-1)bak(rid[i+1]);
+      if(y>0)bak(rid[i-W]);
+      if(y<H-1)bak(rid[i+W]);
+    }
+    const enIyi=new Map();
+    komsu.forEach((v,k)=>{
+      const a=Math.floor(k/1e6),b=k%1e6;
+      const cur=enIyi.get(a);
+      if(!cur||v>cur[1])enIyi.set(a,[b,v]);
+    });
+    enIyi.forEach((v,a)=>{if(boy[a]<minAlan){hedef[a]=v[0];degisti=true;}});
+    if(!degisti)break;
+    for(let i=0;i<N;i++){
+      let a=rid[i],guard=0;
+      while(hedef[a]>=0&&hedef[a]!==a&&guard++<6)a=hedef[a];
+      rid[i]=a;
+    }
+  }
+
+  /* kalan bölgeleri sırala ve piksellerini topla */
+  const harita=new Map();
+  const pxs=[];
+  for(let i=0;i<N;i++){
+    const a=rid[i];
+    let id=harita.get(a);
+    if(id===undefined){id=pxs.length;harita.set(a,id);pxs.push([]);}
+    pxs[id].push(i);
+    rid[i]=id;
+  }
+  if(pxs.length<4)return false;
+
+  /* her bölgenin ortalama rengi -> palet */
+  const ort=[];
+  for(const px of pxs){
+    let r=0,g=0,b=0;
+    const adim=Math.max(1,Math.floor(px.length/400));
+    let n=0;
+    for(let k=0;k<px.length;k+=adim){const p=px[k];r+=orig[p*4];g+=orig[p*4+1];b+=orig[p*4+2];n++;}
+    ort.push([r/n,g/n,b/n]);
+  }
+  const KK=Math.max(4,Math.min(28,Math.round(Math.sqrt(pxs.length)*1.6)));
+  const lab=ort.map(c=>rgb2lab(c[0],c[1],c[2]));
+  const cen=[];
+  cen.push(lab[(rnd()*lab.length)|0].slice());
+  while(cen.length<KK){
+    let bi=0,bd=-1;
+    for(let i=0;i<lab.length;i++){
+      let d=Infinity;
+      for(const c of cen){
+        const q=(lab[i][0]-c[0])**2+(lab[i][1]-c[1])**2+(lab[i][2]-c[2])**2;
+        if(q<d)d=q;
+      }
+      if(d>bd){bd=d;bi=i;}
+    }
+    cen.push(lab[bi].slice());
+  }
+  const ata=new Int32Array(lab.length);
+  for(let it=0;it<14;it++){
+    for(let i=0;i<lab.length;i++){
+      let bc=0,bd=Infinity;
+      for(let c=0;c<cen.length;c++){
+        const q=(lab[i][0]-cen[c][0])**2+(lab[i][1]-cen[c][1])**2+(lab[i][2]-cen[c][2])**2;
+        if(q<bd){bd=q;bc=c;}
+      }
+      ata[i]=bc;
+    }
+    const s0=cen.map(()=>[0,0,0,0]);
+    for(let i=0;i<lab.length;i++){
+      const w=pxs[i].length,a=s0[ata[i]];
+      a[0]+=lab[i][0]*w;a[1]+=lab[i][1]*w;a[2]+=lab[i][2]*w;a[3]+=w;
+    }
+    for(let c=0;c<cen.length;c++)if(s0[c][3])
+      cen[c]=[s0[c][0]/s0[c][3],s0[c][1]/s0[c][3],s0[c][2]/s0[c][3]];
+  }
+  const topla=cen.map(()=>[0,0,0,0]);
+  for(let i=0;i<ort.length;i++){
+    const w=pxs[i].length,a=topla[ata[i]];
+    a[0]+=ort[i][0]*w;a[1]+=ort[i][1]*w;a[2]+=ort[i][2]*w;a[3]+=w;
+  }
+  K=cen.length;
+  palette=topla.map(a=>a[3]
+    ? [Math.round(a[0]/a[3]),Math.round(a[1]/a[3]),Math.round(a[2]/a[3])]
+    : [128,128,128]);
+  palLab=palette.map(c=>rgb2lab(c[0],c[1],c[2]));
+
+  palIdx=new Uint8Array(N);
+  regions=[];regionId=rid;
+  for(let i=0;i<pxs.length;i++){
+    const c=ata[i];
+    const arr=Int32Array.from(pxs[i]);
+    for(let k=0;k<arr.length;k++)palIdx[arr[k]]=c;
+    regions.push({color:c,pixels:arr,size:arr.length,filled:false});
+  }
+  return true;
 }
 
 function labelRegions(){
