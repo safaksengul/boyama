@@ -6,6 +6,13 @@
       "k": "Test",
       "u": "https://safaksengul.github.io/boyama/deneme.png",
       "p": "50% 25%"
+    },
+    {
+      "id": "safak",
+      "t": "lamborghini",
+      "k": "Yeni",
+      "u": "https://safaksengul.github.io/boyama/resim/safak.jpg",
+      "p": "50% 25%"
     }
   ],
   "kaldir": []
