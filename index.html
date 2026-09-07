@@ -558,7 +558,15 @@ async function renderGallery(){
     if(it.pct>0&&it.pct<100)
       extra+='<i class="fillmask" style="height:'+it.pct+'%"></i><i class="badge">%'+it.pct+'</i>';
     b.innerHTML='<img class="thumb" src="'+(it.prev||it.d)+'" alt="'+it.t+'" style="object-position:'+(it.p||"50% 25%")+'">'+extra;
-    if(!it.prev)applySketch(b.querySelector("img"),it.d);
+    const imel=b.querySelector("img");
+    if(it.prev){
+      let tries=0;
+      imel.onerror=()=>{
+        tries++;
+        if(tries<4)setTimeout(()=>{if(imel.isConnected)imel.src=it.prev+"?r="+Date.now();},3500);
+        else{imel.onerror=null;imel.src=it.d;applySketch(imel,it.d);}
+      };
+    }else applySketch(imel,it.d);
     b.onclick=e=>{
       if(e.target.classList.contains("more")){cardMenu(it);return;}
       loadSrc(it.d,it.id);
