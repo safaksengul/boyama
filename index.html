@@ -178,7 +178,12 @@
     animation:tshine 3.2s ease-in-out infinite}
   @keyframes tshift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
   @keyframes tshine{0%{left:-60%}45%,100%{left:130%}}
-  .card .more{position:absolute;left:5px;top:5px;width:24px;height:24px;border-radius:50%;
+  .card img.thumb{background:#fff}
+  .card img.thumb.flat{filter:grayscale(1) contrast(1.35) brightness(1.08)}
+  .card .ribbon{position:absolute;left:-20px;top:9px;transform:rotate(-32deg);
+    font-style:normal;font-size:9px;font-weight:900;letter-spacing:.08em;color:#fff;
+    background:#e0453c;padding:3px 24px;box-shadow:0 2px 6px rgba(0,0,0,.45);z-index:3}
+  .card .more{position:absolute;right:5px;top:5px;width:24px;height:24px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;font-style:normal;font-size:14px;
     font-weight:800;letter-spacing:1px;background:rgba(18,19,26,.75);
     border:1px solid rgba(255,255,255,.22);color:#fff;z-index:3}
@@ -214,7 +219,7 @@
     backdrop-filter:blur(4px)}
   .card .fillmask{position:absolute;left:0;right:0;bottom:0;pointer-events:none;
     background:rgba(0,0,0,.42);border-top:1px solid rgba(255,255,255,.14)}
-  .card .badge{position:absolute;right:5px;top:5px;font-style:normal;font-size:9px;font-weight:800;
+  .card .badge{position:absolute;right:5px;bottom:5px;font-style:normal;font-size:9px;font-weight:800;
     color:#fff;background:rgba(10,11,15,.72);border:1px solid rgba(255,255,255,.18);
     border-radius:99px;padding:3px 6px;backdrop-filter:blur(4px)}
   .card .badge.full{background:rgba(61,220,151,.92);color:#08130d;border-color:transparent}
@@ -536,9 +541,11 @@ async function renderGallery(){
     const b=document.createElement("button");
     b.className="card"+(it.pct>=100?" fin":"")+(it.hid?" hid":"");
     let extra='<i class="more" title="Seçenekler">⋯</i>';
+    if(it.fresh)extra+='<i class="ribbon">YENİ</i>';
     if(it.pct>0&&it.pct<100)
       extra+='<i class="fillmask" style="height:'+it.pct+'%"></i><i class="badge">%'+it.pct+'</i>';
-    b.innerHTML='<img src="'+it.d+'" alt="'+it.t+'" style="object-position:'+(it.p||"50% 25%")+'">'+extra;
+    b.innerHTML='<img class="thumb" src="'+it.d+'" alt="'+it.t+'" style="object-position:'+(it.p||"50% 25%")+'">'+extra;
+    applySketch(b.querySelector("img"),it.d);
     b.onclick=e=>{
       if(e.target.classList.contains("more")){cardMenu(it);return;}
       loadSrc(it.d,it.id);
@@ -823,6 +830,74 @@ function openAdmin(){
   };
 
   w.querySelector(".ax").onclick=()=>w.remove();
+}
+
+/* ---------- önizleme: karakalem dönüşümü ---------- */
+const sketchCache=new Map();
+let sQ=[],sBusy=false;
+function boxBlur(src,W,H,r){
+  const tmp=new Float32Array(src.length),out=new Float32Array(src.length);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    let sum=0,c=0;
+    for(let k=-r;k<=r;k++){const xx=x+k;if(xx<0||xx>=W)continue;sum+=src[y*W+xx];c++;}
+    tmp[y*W+x]=sum/c;
+  }
+  for(let x=0;x<W;x++)for(let y=0;y<H;y++){
+    let sum=0,c=0;
+    for(let k=-r;k<=r;k++){const yy=y+k;if(yy<0||yy>=H)continue;sum+=tmp[yy*W+x];c++;}
+    out[y*W+x]=sum/c;
+  }
+  return out;
+}
+function sketchOf(im){
+  const W=280,H=Math.max(1,Math.round(W*im.naturalHeight/(im.naturalWidth||1)));
+  const cv=document.createElement("canvas");cv.width=W;cv.height=H;
+  const cx=cv.getContext("2d",{willReadFrequently:true});
+  cx.drawImage(im,0,0,W,H);
+  const d=cx.getImageData(0,0,W,H),p=d.data,n=W*H;
+  const g=new Float32Array(n),inv=new Float32Array(n);
+  for(let i=0;i<n;i++){
+    const v=.299*p[i*4]+.587*p[i*4+1]+.114*p[i*4+2];
+    g[i]=v;inv[i]=255-v;
+  }
+  const bl=boxBlur(inv,W,H,5);
+  for(let i=0;i<n;i++){
+    const b=bl[i];
+    let v=b>=254.5?255:g[i]*255/(255-b);
+    v=(v-128)*1.3+138;                       /* kontrastı biraz aç */
+    v=v<0?0:v>255?255:v;
+    p[i*4]=p[i*4+1]=p[i*4+2]=v;p[i*4+3]=255;
+  }
+  cx.putImageData(d,0,0);
+  return cv.toDataURL("image/jpeg",.82);
+}
+function runSketch(){
+  sBusy=true;
+  const next=()=>{
+    const job=sQ.shift();
+    if(!job){sBusy=false;return;}
+    const el=job[0],src=job[1];
+    if(!el.isConnected)return setTimeout(next,0);
+    if(sketchCache.has(src)){el.src=sketchCache.get(src);return setTimeout(next,0);}
+    const im=new Image();
+    if(src.slice(0,5)!=="data:")im.crossOrigin="anonymous";
+    im.onload=()=>{
+      try{
+        const out=sketchOf(im);
+        sketchCache.set(src,out);
+        if(el.isConnected)el.src=out;
+      }catch(e){el.classList.add("flat");}
+      setTimeout(next,16);
+    };
+    im.onerror=()=>{el.classList.add("flat");setTimeout(next,0);};
+    im.src=src;
+  };
+  next();
+}
+function applySketch(el,src){
+  if(sketchCache.has(src)){el.src=sketchCache.get(src);return;}
+  sQ.push([el,src]);
+  if(!sBusy)runSketch();
 }
 
 /* ---------- seçenek penceresi ---------- */
