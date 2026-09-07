@@ -1961,7 +1961,7 @@ function lineArtSegment(orig,flt){
   };
 
   /* köşedeki alan resmin çoğunu yutuyorsa çizgi delinmiş demektir; sıkılaştır */
-  const denemeler=[[150,1],[185,1],[205,2],[225,2]];
+  const denemeler=[[150,1],[175,1],[195,1]];
   let cizgi=null;
   for(let d=0;d<denemeler.length;d++){
     const m=maskeYap(denemeler[d][0],denemeler[d][1]);
@@ -1981,9 +1981,9 @@ function lineArtSegment(orig,flt){
       if(y<H-1&&!m[q+W]&&!gor[q+W]){gor[q+W]=1;stack[sp++]=q+W;}
     }
     cizgi=m;
-    if(adet/N<0.45)break;      /* sızıntı yok, bu maske iyi */
+    if(adet/N<0.80)break;      /* gerçek sızıntıda tek alan neredeyse tüm resmi yutar */
   }
-  if(!cizgi)cizgi=maskeYap(185,1);
+  if(!cizgi)cizgi=maskeYap(175,1);
   /* renkli resmi paletle (bölgelerin rengi buradan gelir) */
   K=26;
   quantize(flt,orig);
