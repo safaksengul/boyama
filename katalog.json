@@ -4,7 +4,8 @@
     "Savaşcı",
     "Araba",
     "Hayvan",
-    "Uzay"
+    "Uzay",
+    "Oyun"
   ],
   "kategori": {},
   "ekle": [
@@ -71,7 +72,7 @@
     {
       "id": "oyun-03-gbbb",
       "t": "oyun 03",
-      "k": "Fantastik",
+      "k": "Oyun",
       "u": "https://safaksengul.github.io/boyama/resim/oyun-03-gbbb.jpg",
       "o": "https://safaksengul.github.io/boyama/resim/oyun-03-gbbb-cizim.jpg?v=mtsjget0",
       "kilit": false,
