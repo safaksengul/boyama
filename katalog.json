@@ -180,6 +180,16 @@
       "kilit": false,
       "p": "50% 25%",
       "e": 1788873048554
+    },
+    {
+      "id": "hayvan-02-zgtu",
+      "t": "hayvan 02",
+      "k": "Hayvan",
+      "u": "https://safaksengul.github.io/boyama/resim/hayvan-02-zgtu.jpg",
+      "o": "https://safaksengul.github.io/boyama/resim/hayvan-02-zgtu-cizim.jpg?v=mtsozl7a",
+      "kilit": false,
+      "p": "50% 25%",
+      "e": 1788873322006
     }
   ],
   "kaldir": []
