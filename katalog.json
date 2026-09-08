@@ -6,7 +6,8 @@
     "Hayvan",
     "Uzay",
     "Oyun",
-    "Doğa"
+    "Doğa",
+    "Manzara"
   ],
   "kategori": {},
   "ekle": [
@@ -101,19 +102,9 @@
       "e": 1788865123941
     },
     {
-      "id": "oyun-01-aa63",
-      "t": "oyun 01",
-      "k": "Fantastik",
-      "u": "https://safaksengul.github.io/boyama/resim/oyun-01-aa63.jpg",
-      "o": "https://safaksengul.github.io/boyama/resim/oyun-01-aa63-cizim.jpg?v=mtskafd9",
-      "kilit": false,
-      "p": "50% 25%",
-      "e": 1788865429581
-    },
-    {
       "id": "manzara-02-gzpt",
       "t": "manzara 02",
-      "k": "Fantastik",
+      "k": "Manzara",
       "u": "https://safaksengul.github.io/boyama/resim/manzara-02-gzpt.jpg",
       "o": "https://safaksengul.github.io/boyama/resim/manzara-02-gzpt-cizim.jpg?v=mtskh34a",
       "kilit": false,
@@ -129,6 +120,16 @@
       "kilit": false,
       "p": "50% 25%",
       "e": 1788865895780
+    },
+    {
+      "id": "manzara-06-tdjf",
+      "t": "manzara 06",
+      "k": "Fantastik",
+      "u": "https://safaksengul.github.io/boyama/resim/manzara-06-tdjf.jpg",
+      "o": "https://safaksengul.github.io/boyama/resim/manzara-06-tdjf-cizim.jpg?v=mtsktj5o",
+      "kilit": false,
+      "p": "50% 25%",
+      "e": 1788866320956
     }
   ],
   "kaldir": []
