@@ -5,7 +5,8 @@
     "Araba",
     "Hayvan",
     "Uzay",
-    "Oyun"
+    "Oyun",
+    "Doğa"
   ],
   "kategori": {},
   "ekle": [
@@ -92,7 +93,7 @@
     {
       "id": "doga-02-3pgh",
       "t": "doga 02",
-      "k": "Fantastik",
+      "k": "Doğa",
       "u": "https://safaksengul.github.io/boyama/resim/doga-02-3pgh.jpg",
       "o": "https://safaksengul.github.io/boyama/resim/doga-02-3pgh-cizim.jpg?v=mtsk3vj8",
       "kilit": false,
