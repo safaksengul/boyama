@@ -235,12 +235,22 @@
     {
       "id": "doga-01-z30z",
       "t": "doga 01",
-      "k": "Doğa",
+      "k": "Fantastik",
       "u": "https://safaksengul.github.io/boyama/resim/doga-01-z30z.jpg",
       "o": "https://safaksengul.github.io/boyama/resim/doga-01-z30z-cizim.jpg?v=mtsrz6gc",
       "kilit": false,
       "p": "50% 25%",
       "e": 1788878341740
+    },
+    {
+      "id": "doga-02-9c94",
+      "t": "doga 02",
+      "k": "Fantastik",
+      "u": "https://safaksengul.github.io/boyama/resim/doga-02-9c94.jpg",
+      "o": "https://safaksengul.github.io/boyama/resim/doga-02-9c94-cizim.jpg?v=mtss9g28",
+      "kilit": false,
+      "p": "50% 25%",
+      "e": 1788878820753
     }
   ],
   "kaldir": []
