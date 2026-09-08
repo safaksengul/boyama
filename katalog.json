@@ -4,8 +4,7 @@
     "Savaşcı",
     "Araba",
     "Hayvan",
-    "Uzay",
-    "Oyun"
+    "Uzay"
   ],
   "kategori": {},
   "ekle": [
@@ -70,14 +69,14 @@
       "e": 1788863117054
     },
     {
-      "id": "oyun-03-dumd",
+      "id": "oyun-03-gbbb",
       "t": "oyun 03",
-      "k": "Oyun",
-      "u": "https://safaksengul.github.io/boyama/resim/oyun-03-dumd.jpg",
-      "o": "https://safaksengul.github.io/boyama/resim/oyun-03-dumd-cizim.jpg?v=mtsjdzww",
+      "k": "Fantastik",
+      "u": "https://safaksengul.github.io/boyama/resim/oyun-03-gbbb.jpg",
+      "o": "https://safaksengul.github.io/boyama/resim/oyun-03-gbbb-cizim.jpg?v=mtsjget0",
       "kilit": false,
       "p": "50% 25%",
-      "e": 1788863916561
+      "e": 1788864029172
     }
   ],
   "kaldir": []
