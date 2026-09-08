@@ -6,7 +6,8 @@
     "Hayvan",
     "Uzay",
     "Oyun",
-    "Doğa"
+    "Doğa",
+    "Manzara"
   ],
   "kategori": {},
   "ekle": [
@@ -113,7 +114,7 @@
     {
       "id": "manzara-02-gzpt",
       "t": "manzara 02",
-      "k": "Fantastik",
+      "k": "Manzara",
       "u": "https://safaksengul.github.io/boyama/resim/manzara-02-gzpt.jpg",
       "o": "https://safaksengul.github.io/boyama/resim/manzara-02-gzpt-cizim.jpg?v=mtskh34a",
       "kilit": false,
