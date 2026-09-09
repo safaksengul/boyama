@@ -2890,8 +2890,12 @@ function selectColor(i){
   if(prev!==i&&colorGroups[prev])for(const r of colorGroups[prev])if(!r.filled)t.push(r);
   for(const r of colorGroups[i])if(!r.filled)t.push(r);
   patchSnapshot(t);refreshChips();render();saveState();kick();
-  const b=chips[i];
-  if(b)b.scrollIntoView({inline:"center",block:"nearest",behavior:"smooth"});
+  /* yalnızca palet şeridini kaydır; sayfayı oynatma */
+  const b=chips[i],pal=$("#palette");
+  if(b&&pal){
+    const hedef=b.offsetLeft-(pal.clientWidth-b.offsetWidth)/2;
+    pal.scrollTo({left:Math.max(0,hedef),behavior:"smooth"});
+  }
 }
 
 /* ---------- palet şeridini fareyle sürükleme ---------- */
@@ -2924,11 +2928,12 @@ function selectColor(i){
 })();
 
 /* ================= boyama ================= */
-let gecmis=[];                 /* son boyamalar, geri almak için */
+const GERI_SINIR=10;           /* en fazla kaç hamle geri alınabilir */
+let gecmis=[];
 function fillOne(r,kayit){
   if(r.filled)return false;
   r.filled=true;doneTasks++;patchSnapshot([r]);texRegion(r);
-  if(kayit!==false){gecmis.push(r);if(gecmis.length>60)gecmis.shift();}
+  if(kayit!==false){gecmis.push(r);if(gecmis.length>GERI_SINIR)gecmis.shift();}
   return true;
 }
 function undoOne(){
@@ -2937,8 +2942,15 @@ function undoOne(){
   r.filled=false;doneTasks=Math.max(0,doneTasks-1);
   patchSnapshot([r]);
   rebuildTexture();
-  if(!chips[r.color])buildPalette();      /* rengin kutusu kalkmışsa geri getir */
+  /* kutu çıkma animasyonundaysa onu geri çağır, tamamen gittiyse paleti kur */
+  const kb=chips[r.color];
+  if(kb&&kb.dataset.bye){
+    delete kb.dataset.bye;
+    kb.classList.remove("bye","gone","cheer");
+  }else if(!kb)buildPalette();
+  const sx=offX,sy=offY,ss=scale;
   selectColor(r.color);
+  offX=sx;offY=sy;scale=ss;               /* kadraj yerinde kalsın */
   updateProgress();refreshChips();render();saveState(true);
   ctx&&fx.push({t:performance.now(),d:420,x:r.lx,y:r.ly,r:Math.max(14,r.rad*2.4),kind:"ripple"});
   startFx();
