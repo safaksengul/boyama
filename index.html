@@ -165,6 +165,7 @@
   #godbar button{background:var(--ink-3);border:1px solid var(--line);color:var(--text);
     border-radius:99px;padding:7px 11px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
   #godbar button.gx{margin-left:auto;color:#ff8b8b;border-color:rgba(255,120,120,.45)}
+  #godbar[hidden]{display:none}
   #btnHesap{flex:0 0 auto;margin-top:4px;display:flex;align-items:center;gap:6px;
     background:var(--ink-2);border:1px solid var(--line);color:var(--text);
     border-radius:99px;padding:11px 16px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
@@ -1072,7 +1073,11 @@ if(YONETICI_ACIK)(function(){
       if(Date.now()<adBlok){toast("Çok fazla denedin, biraz bekle");return;}
       const p=prompt("Yönetici şifresi:");
       if(p===null)return;
-      if(pinHash(p)===ADMIN_PIN_HASH){adFail=0;setGod(true);openAdmin();}
+      if(pinHash(p)===ADMIN_PIN_HASH){
+        adFail=0;setGod(true);
+        toast("Yönetici modu açık — üstteki yeşil şerit");
+        openAdmin();
+      }
       else{
         adFail++;
         if(adFail>=3){adBlok=Date.now()+60000;adFail=0;toast("Bir dakika beklemen gerekiyor");}
