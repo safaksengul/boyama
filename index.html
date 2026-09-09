@@ -172,6 +172,50 @@
     background:var(--ink-2);border:1px solid var(--line);color:var(--text);
     border-radius:99px;padding:11px 16px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
   #btnHesap:active{transform:scale(.96)}
+  #tanit{position:fixed;inset:0;z-index:72;display:flex;align-items:center;justify-content:center;
+    padding:22px;background:rgba(8,9,14,.88);backdrop-filter:blur(6px);opacity:0;transition:.25s}
+  #tanit.on{opacity:1}
+  .tkart{width:min(360px,100%);text-align:center;padding:28px 22px 20px;
+    background:var(--ink-2);border:1px solid var(--line);border-radius:22px;
+    box-shadow:0 20px 50px rgba(0,0,0,.6)}
+  .tik{display:block;font-size:46px;margin-bottom:12px}
+  .tkart h3{margin:0 0 8px;font-size:20px;font-weight:800}
+  .tkart p{margin:0 0 18px;color:var(--muted);font-size:14px;line-height:1.6}
+  .tnok{display:flex;gap:6px;justify-content:center;margin-bottom:16px}
+  .tnok i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.22)}
+  .tnok i.on{background:var(--accent-2);width:18px;border-radius:99px}
+  .tbtn{width:100%;padding:14px;border:0;border-radius:14px;cursor:pointer;
+    background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#fff;
+    font-family:inherit;font-size:15px;font-weight:800}
+  .tgec{width:100%;margin-top:8px;padding:10px;background:transparent;border:0;cursor:pointer;
+    color:var(--muted);font-family:inherit;font-size:13px;font-weight:600}
+  #btnRozet{flex:0 0 auto;margin-top:4px;width:44px;height:44px;border-radius:50%;
+    background:var(--ink-2);border:1px solid var(--line);font-size:19px;cursor:pointer}
+  #btnRozet:active{transform:scale(.94)}
+  #rozet{position:fixed;inset:0;z-index:66;display:flex;flex-direction:column;background:var(--ink)}
+  #rozet .abar{display:flex;align-items:center;justify-content:space-between;
+    padding:calc(14px + var(--safe-t)) 16px 14px;border-bottom:1px solid var(--line);font-size:17px}
+  #rozet .ax{background:var(--ink-3);border:1px solid var(--line);color:var(--text);
+    border-radius:99px;padding:8px 16px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+  #rozet .abody{flex:1;overflow-y:auto;padding:16px 16px calc(28px + var(--safe-b))}
+  .ristat{display:flex;gap:8px;margin-bottom:16px}
+  .ristat span{flex:1;display:flex;flex-direction:column;gap:2px;align-items:center;
+    padding:12px 6px;background:var(--ink-2);border:1px solid var(--line);border-radius:14px;
+    font-size:11px;color:var(--muted);text-align:center;line-height:1.3}
+  .ristat b{font-size:20px;font-weight:800;color:var(--text)}
+  .rkart{display:flex;gap:12px;align-items:center;padding:13px;margin-bottom:9px;
+    background:var(--ink-2);border:1px solid var(--line);border-radius:16px;opacity:.55}
+  .rkart.ok{opacity:1;border-color:rgba(247,201,72,.5);
+    background:linear-gradient(150deg,rgba(247,201,72,.12),transparent 60%),var(--ink-2)}
+  .rik{flex:0 0 auto;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-size:21px;background:var(--ink-3);border:1px solid var(--line)}
+  .rkart.ok .rik{background:linear-gradient(135deg,#ffd766,#e08a10);border-color:transparent}
+  .rgv{flex:1 1 auto;min-width:0}
+  .rgv b{display:block;font-size:15px;font-weight:800}
+  .rgv i{display:block;font-style:normal;font-size:12px;color:var(--muted);margin:2px 0 7px}
+  .rbar{display:block;height:5px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
+  .rbar u{display:block;height:100%;background:#7ef0b4}
+  .rgv em{display:block;font-style:normal;font-size:10px;color:var(--muted);margin-top:4px}
   #hesap{position:fixed;inset:0;z-index:66;display:flex;flex-direction:column;background:var(--ink)}
   #hesap .abar{display:flex;align-items:center;justify-content:space-between;
     padding:calc(14px + var(--safe-t)) 16px 14px;border-bottom:1px solid var(--line);font-size:17px}
@@ -189,6 +233,12 @@
   .hbtn:active{transform:scale(.99)}
   .hbtn.marka{background:#fff;border-color:#fff;color:#1a1a1a}
   .hbtn.cik{background:transparent;color:#ff8b8b;border-color:rgba(255,120,120,.4)}
+  #btnBul{position:fixed;right:14px;bottom:calc(166px + var(--safe-b));z-index:24;
+    width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:rgba(20,21,30,.92);border:1px solid var(--line);color:var(--text);cursor:pointer;
+    box-shadow:0 6px 16px rgba(0,0,0,.45)}
+  #btnBul:active{transform:scale(.93)}
+  #btnBul[hidden]{display:none}
   #btnUndo{position:fixed;right:14px;bottom:calc(112px + var(--safe-b));z-index:24;
     width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;
     background:rgba(20,21,30,.92);border:1px solid var(--line);color:var(--text);cursor:pointer;
@@ -465,6 +515,10 @@
 <div id="stage" hidden>
   <canvas id="view"></canvas>
   <div id="aim">🧨 Patlatmak istediğin yere dokun</div>
+  <button id="btnBul" title="Kalan bölgeyi bul" hidden>
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+      stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+  </button>
   <button id="btnUndo" title="Geri al" hidden>
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
       stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -487,6 +541,7 @@
       <p class="sub">Bir resim seç, sırayla boya, rozetleri topla.</p>
       <p id="seri" hidden></p>
     </div>
+    <button id="btnRozet" title="Rozetler">🏆</button>
     <button id="btnHesap" title="Hesap">Hesap</button>
     <button id="btnShop" title="Dükkân"><span id="shopIc"></span>Dükkân</button>
   </div>
@@ -917,6 +972,8 @@ async function loadPrefs(){
 }
 async function buildGallery(){
   await loadEnt();
+  await istatYukle();
+  await tanitimGoster();
   gunlukKontrol();
   await fiyatlariCek();
   const it0=await store.get("items");
@@ -1676,6 +1733,89 @@ function applySketch(el,src){
 }
 
 
+/* ---------- ilk açılış tanıtımı ---------- */
+const TANIT=[
+ {ik:"🎨",b:"Sayılarla boyama",m:"Her bölgenin bir numarası var. Alttan o numaralı rengi seç, bölgeye dokun, renk yerini bulsun."},
+ {ik:"🔍",b:"Kaybolma",m:"Sağdaki büyüteç seni kalan bölgeye götürür. Yanlış yere dokunursan uygulama doğru rengi söyler."},
+ {ik:"💡",b:"Yardımcılar",m:"Boyadıkça ipucu, kova ve dinamit kazanırsın. Her gün gelirsen hediye seni bekler."}
+];
+async function tanitimGoster(){
+  if(await store.get("tanitim"))return;
+  let i=0;
+  const w=document.createElement("div");
+  w.id="tanit";
+  w.innerHTML='<div class="tkart"><span class="tik"></span><h3></h3><p></p>'+
+    '<span class="tnok"></span>'+
+    '<button class="tbtn"></button>'+
+    '<button class="tgec">Geç</button></div>';
+  document.body.appendChild(w);
+  const kapat=async()=>{await store.set("tanitim",1);w.remove();};
+  const ciz=()=>{
+    const t=TANIT[i];
+    w.querySelector(".tik").textContent=t.ik;
+    w.querySelector("h3").textContent=t.b;
+    w.querySelector("p").textContent=t.m;
+    w.querySelector(".tnok").innerHTML=TANIT.map((_,k)=>'<i'+(k===i?' class="on"':'')+'></i>').join("");
+    w.querySelector(".tbtn").textContent=i<TANIT.length-1?"Devam":"Başlayalım";
+  };
+  w.querySelector(".tbtn").onclick=()=>{if(i<TANIT.length-1){i++;ciz();}else kapat();};
+  w.querySelector(".tgec").onclick=kapat;
+  ciz();
+  requestAnimationFrame(()=>w.classList.add("on"));
+}
+
+/* ---------- rozetler ---------- */
+const ROZET=[
+ {id:"ilk",   ad:"İlk adım",        ac:"İlk resmini bitir",              alan:"bitti", n:1,  ik:"🎨"},
+ {id:"bes",   ad:"Koleksiyoncu",    ac:"5 resim bitir",                  alan:"bitti", n:5,  ik:"🖼️"},
+ {id:"yirmi", ad:"Usta boyacı",     ac:"20 resim bitir",                 alan:"bitti", n:20, ik:"🏆"},
+ {id:"b500",  ad:"Sabırlı el",      ac:"500 bölge boya",                 alan:"bolge", n:500, ik:"✋"},
+ {id:"b5000", ad:"Bitmeyen hevesi", ac:"5000 bölge boya",                alan:"bolge", n:5000,ik:"💪"},
+ {id:"seri3", ad:"Alışkanlık",      ac:"3 gün üst üste gel",             alan:"enSeri",n:3,  ik:"🔥"},
+ {id:"seri7", ad:"Haftalık",        ac:"7 gün üst üste gel",             alan:"enSeri",n:7,  ik:"📅"},
+ {id:"seri30",ad:"Bir ay boyunca",  ac:"30 gün üst üste gel",            alan:"enSeri",n:30, ik:"🌟"}
+];
+let istat={bitti:0,bolge:0,enSeri:0};
+async function istatYukle(){
+  const v=await store.get("istat");
+  if(v&&typeof v==="object")istat=Object.assign(istat,v);
+}
+let istatT;
+function istatKaydet(){clearTimeout(istatT);istatT=setTimeout(()=>store.set("istat",istat),500);}
+function rozetKazanildiMi(r){return (istat[r.alan]||0)>=r.n;}
+function rozetKontrol(oncesi){
+  for(const r of ROZET){
+    const eski=(oncesi[r.alan]||0)>=r.n;
+    if(!eski&&rozetKazanildiMi(r)){
+      setTimeout(()=>sheet(r.ik+"  Rozet kazandın",
+        [{l:r.ad,fn:()=>{}},{l:r.ac,fn:()=>{}}]),700);
+      break;
+    }
+  }
+}
+function openRozet(){
+  if(document.getElementById("rozet"))return;
+  const w=document.createElement("div");
+  w.id="rozet";
+  const kart=r=>{
+    const ok=rozetKazanildiMi(r);
+    const su=Math.min(istat[r.alan]||0,r.n);
+    return '<div class="rkart'+(ok?" ok":"")+'">'+
+      '<span class="rik">'+r.ik+'</span>'+
+      '<span class="rgv"><b>'+r.ad+'</b><i>'+r.ac+'</i>'+
+      '<span class="rbar"><u style="width:'+Math.round(su/r.n*100)+'%"></u></span>'+
+      '<em>'+su+' / '+r.n+'</em></span></div>';
+  };
+  w.innerHTML='<div class="abar"><b>Rozetler</b><button class="ax">Kapat</button></div>'+
+    '<div class="abody">'+
+    '<div class="ristat"><span><b>'+istat.bitti+'</b>bitirilen resim</span>'+
+    '<span><b>'+istat.bolge+'</b>boyanan bölge</span>'+
+    '<span><b>'+istat.enSeri+'</b>en uzun seri</span></div>'+
+    ROZET.map(kart).join("")+'</div>';
+  document.body.appendChild(w);
+  w.querySelector(".ax").onclick=()=>w.remove();
+}
+
 /* ---------- günlük ödül ve seri ----------
    Her gün uygulamayı açana ipucu verir; üst üste günlerde artar.       */
 const GUNLUK={temel:{bulb:2},yedinciGun:{bulb:5,bucket:2,bomb:1}};
@@ -1693,6 +1833,7 @@ async function gunlukKontrol(){
   seri=g.seri||0;
   if(g.son===bugunKod()){seriYaz();return;}
   seri=(g.son===dunKod())?seri+1:1;
+  if(seri>(istat.enSeri||0)){const onc=Object.assign({},istat);istat.enSeri=seri;istatKaydet();rozetKontrol(onc);}
   const yedi=seri%7===0;
   const ver=yedi?GUNLUK.yedinciGun:GUNLUK.temel;
   for(const k in ver)items[k]=(items[k]||0)+ver[k];
@@ -1928,10 +2069,11 @@ function loadSrc(src,id,lineSrc){
   im.onerror=()=>{busy(false);toast("Resim indirilemedi, bağlantını kontrol et");};
   im.src=src;
 }
+$("#btnRozet").onclick=()=>openRozet();
 $("#btnHesap").onclick=()=>openHesap();
 $("#shopIc").innerHTML=SVG.sepet;
 $("#btnShop").onclick=()=>openShop(null);
-$("#btnNew").onclick=()=>{teklifDurdur();$("#btnUndo").hidden=true;buildGallery();$("#setup").style.display="";};
+$("#btnNew").onclick=()=>{teklifDurdur();$("#btnUndo").hidden=true;$("#btnBul").hidden=true;buildGallery();$("#setup").style.display="";};
 $("#file").onchange=async e=>{
   const f=e.target.files[0];e.target.value="";
   if(!f)return;
@@ -2031,9 +2173,10 @@ async function build(){
   return await buildFinish();
 }
 
+let bittiSayildi=false;
 async function buildFinish(){
-  izgara=null;gecmis=[];
-  $("#btnUndo").hidden=false;
+  izgara=null;gecmis=[];bittiSayildi=false;
+  $("#btnUndo").hidden=false;$("#btnBul").hidden=false;
   texCv=document.createElement("canvas");texCv.width=W;texCv.height=H;
   texCtx=texCv.getContext("2d");texCtx.clearRect(0,0,W,H);
   makeTile();
@@ -2802,6 +2945,36 @@ function undoOne(){
   toast("Geri alındı");
 }
 $("#btnUndo").onclick=undoOne;
+$("#btnBul").onclick=()=>{
+  let list=(colorGroups[active]||[]).filter(r=>!r.filled);
+  if(!list.length){
+    for(let c=0;c<K;c++){
+      const g=(colorGroups[c]||[]).filter(r=>!r.filled);
+      if(g.length){selectColor(c);list=g;break;}
+    }
+  }
+  if(!list.length){toast("Boyanacak bölge kalmadı");return;}
+  const cx=(-offX+cssW/2)/scale,cy=(-offY+cssH/2)/scale;
+  const r=list.reduce((a,b)=>
+    !a||Math.hypot(b.lx-cx,b.ly-cy)<Math.hypot(a.lx-cx,a.ly-cy)?b:a,null);
+  const hedef=clamp(Math.max(scale,Math.min(cssW,cssH)/(Math.max(24,r.rad*8))),scale,8);
+  const s0=scale,x0=offX,y0=offY;
+  const s1=hedef,x1=cssW/2-r.lx*s1,y1=cssH/2-r.ly*s1;
+  const t0=performance.now(),sur=420;
+  const adim=()=>{
+    const k=Math.min(1,(performance.now()-t0)/sur);
+    const e=1-Math.pow(1-k,3);
+    scale=s0+(s1-s0)*e;offX=x0+(x1-x0)*e;offY=y0+(y1-y0)*e;
+    render();
+    if(k<1)requestAnimationFrame(adim);
+    else{
+      fx.push({t:performance.now(),d:900,kind:"outline",reg:r});
+      fx.push({t:performance.now(),d:620,x:r.lx,y:r.ly,r:Math.max(18,r.rad*3),kind:"ripple"});
+      startFx();
+    }
+  };
+  etkilesimBasla();adim();etkilesimBitir();
+};
 /* ödüller SADECE elle boyamadan gelir */
 function award(prevManual){
   const gained=[];
@@ -2840,7 +3013,15 @@ function saveState(now){
 }
 function finish(){
   kick();updateProgress();refreshChips();updateTools();render();saveState();
-  if(doneTasks>=totalTasks){saveState(true);confetti();setTimeout(()=>$("#done").classList.add("on"),900);return;}
+  if(doneTasks>=totalTasks){
+    saveState(true);confetti();
+    if(!bittiSayildi){
+      bittiSayildi=true;
+      const onc=Object.assign({},istat);
+      istat.bitti++;istatKaydet();rozetKontrol(onc);
+    }
+    setTimeout(()=>$("#done").classList.add("on"),900);return;
+  }
   if(!colorGroups[active].some(x=>!x.filled)){
     let n=-1;
     for(let s=1;s<=K;s++){const c=(active+s)%K;if(colorGroups[c].length&&colorGroups[c].some(x=>!x.filled)){n=c;break;}}
@@ -2850,6 +3031,8 @@ function finish(){
 function fillManual(r){
   if(!fillOne(r))return;
   const prev=manual;manual++;
+  const onc=Object.assign({},istat);
+  istat.bolge++;istatKaydet();rozetKontrol(onc);
   award(prev);finish();
 }
 function updateProgress(){
@@ -3263,6 +3446,7 @@ stage.addEventListener("wheel",e=>{
   offX=e.clientX-r.left-ix*scale;offY=e.clientY-r.top-iy*scale;
   etkilesimBasla();requestRender();etkilesimBitir();
 },{passive:false});
+let sonYanlis=null;
 function tap(cx,cy){
   const now=Date.now();
   if(now-lastTap<300){lastTap=0;zoomAt(cx,cy);return;}
@@ -3279,10 +3463,19 @@ function tap(cx,cy){
   }
   if(!reg||reg.filled)return;
   if(reg.color!==active){
-    toast("Burası "+(reg.color+1)+" numaralı renk");
+    if(sonYanlis&&sonYanlis.reg===reg&&now-sonYanlis.t<2500){
+      sonYanlis=null;
+      selectColor(reg.color);
+      toast((reg.color+1)+" numaralı renge geçildi");
+      fillManual(reg);
+      return;
+    }
+    sonYanlis={reg:reg,t:now};
+    toast("Burası "+(reg.color+1)+" numaralı renk — tekrar dokun, geçeyim");
     fx.push({t:performance.now(),d:700,kind:"outline",reg:reg});startFx();
     return;
   }
+  sonYanlis=null;
   if(navigator.vibrate)navigator.vibrate(8);
   fillManual(reg);
 }
