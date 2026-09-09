@@ -437,6 +437,30 @@
   .card.own.kilitliEk b{color:#f7c948;font-size:20px}
   .hero[hidden]{display:none}
   .mark{flex:0 0 auto;width:42px;height:42px;border-radius:12px;display:block}
+  #soru{margin:0 0 16px;font-size:clamp(19px,5.2vw,24px);font-weight:800;letter-spacing:-.01em}
+  .bolumB{margin:22px 0 12px;font-size:13px;font-weight:800;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--muted)}
+  #katlar{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}
+  @media (min-width:620px){#katlar{grid-template-columns:repeat(3,1fr)}}
+  .kat{display:flex;align-items:center;gap:11px;padding:15px 14px;cursor:pointer;
+    background:var(--ink-2);border:1px solid var(--line);border-radius:18px;
+    color:var(--text);font-family:inherit;text-align:left;box-shadow:var(--golge);
+    transition:transform .15s}
+  .kat:active{transform:scale(.97)}
+  .kik{flex:0 0 auto;width:38px;height:38px;border-radius:12px;display:flex;
+    align-items:center;justify-content:center;font-size:20px;background:var(--ink-3)}
+  .kad{flex:1 1 auto;min-width:0;font-size:15px;font-weight:700;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ksay{flex:0 0 auto;font-size:12px;font-weight:800;color:var(--muted)}
+  #son{display:flex;gap:11px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+  #son::-webkit-scrollbar{display:none}
+  .sonk{position:relative;flex:0 0 auto;width:92px;height:120px;padding:0;border:0;cursor:pointer;
+    border-radius:15px;overflow:hidden;background:#fff;box-shadow:var(--golge)}
+  .sonk img{width:100%;height:100%;object-fit:cover;display:block}
+  .sonk .sfill{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.34);pointer-events:none}
+  .sonk b{position:absolute;left:6px;bottom:6px;font-size:10px;font-weight:800;color:#fff;
+    background:rgba(20,20,25,.7);border-radius:99px;padding:3px 7px}
+  #tabs .geri{flex:0 0 auto;width:40px;padding:0;font-size:20px;line-height:1}
   #mineNote{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.5}
   #empty{color:var(--muted);font-size:14px;text-align:center;padding:40px 10px}
   .card .redo{position:absolute;left:8px;top:8px;width:28px;height:28px;border-radius:50%;
@@ -571,7 +595,12 @@
       <button id="btnShop" title="Dükkân"><span id="shopIc"></span>Dükkân</button>
     </div>
   </div>
+  <h2 id="soru">Bugün ne boyamak istersin?</h2>
   <button class="hero" id="hero"></button>
+  <h3 class="bolumB" id="katB">Kategoriler</h3>
+  <div id="katlar"></div>
+  <h3 class="bolumB" id="sonB" hidden>Son boyadıkların</h3>
+  <div id="son" hidden></div>
   <div id="tabs"></div>
   <p id="mineNote" hidden>Buraya eklediğin resimler yalnızca bu cihazda kalır, kimseyle paylaşılmaz.</p>
   <div class="grid" id="gallery"></div>
@@ -991,7 +1020,7 @@ async function loadCatalog(){
 }
 
 /* ---------- galeri ---------- */
-let tab="all";
+let tab="home";
 let hiddenIds=[];
 /* çizim tabanlı boyama motoru. false = eski motor (renkten bölge çıkarma) */
 const CIZIM_MOTORU=false;
@@ -1020,6 +1049,7 @@ function dilUygula(){
 async function buildGallery(){
   dilUygula();
   await loadEnt();
+  await sonYukle();
   await istatYukle();
   await tanitimGoster();
   gunlukKontrol();
@@ -1073,6 +1103,17 @@ function setHero(list){
   h.onclick=()=>loadSrc(it.d,it.id,it.prev||"");
 }
 
+const KAT_IK={"Araba":"🚗","Arabalar":"🚗","Uzay":"🌌","Kozmik":"🪐","Hayvan":"🐾","Hayvanlar":"🐾",
+ "Doğa":"🌿","Manzara":"🏙️","Fantastik":"🧙","Oyun":"🎮","Sinematik":"🎬","Savaşcı":"⚔️","Savaşçı":"⚔️",
+ "Anime":"🌸","Samuray":"🗡️","Portre":"🙂","Test":"🧪","Yeni":"✨","Diğer":"🎨"};
+const katIkon=k=>KAT_IK[k]||"🎨";
+let sonlar=[];
+async function sonYukle(){sonlar=(await store.get("sonlar"))||[];}
+async function sonEkle(id){
+  sonlar=[id].concat(sonlar.filter(x=>x!==id)).slice(0,12);
+  await store.set("sonlar",sonlar);
+}
+
 async function renderGallery(){
   if(ent.vipUntil&&ent.vipUntil<=Date.now()&&ent.vipUntil!==-1){
     ent.vipUntil=0;await store.set("ent",ent);
@@ -1097,17 +1138,60 @@ async function renderGallery(){
   tabs.push({k:"mine",l:t("resminiEkle")});
   if(fin.length)tabs.push({k:"done",l:t("bitenler")+" "+fin.length});
   if(hid.length)tabs.push({k:"hid",l:t("gizli")+" "+hid.length});
-  if(!tabs.some(t=>t.k===tab))tab="all";
+  if(tab!=="home"&&!tabs.some(t=>t.k===tab))tab="home";
+
+  const anaSayfa=(tab==="home");
+  $("#soru").hidden=!anaSayfa;
+  $("#katB").hidden=!anaSayfa;
+  $("#katlar").hidden=!anaSayfa;
+  if(!anaSayfa)$("#hero").hidden=true;
 
   const tb=$("#tabs");tb.innerHTML="";
-  tabs.forEach(t=>{
-    const b=document.createElement("button");
-    b.textContent=t.l;
-    if(t.k===tab)b.classList.add("on");
-    b.onclick=()=>{tab=t.k;renderGallery();};
-    tb.appendChild(b);
-  });
-  const list=tab==="done"?fin:tab==="hid"?hid:tab==="new"?fresh:tab==="mine"?mine:
+  if(anaSayfa){
+    tb.hidden=true;
+    const kt=$("#katlar");kt.innerHTML="";
+    const ekle=(k,ad,ik,say)=>{
+      const b=document.createElement("button");
+      b.className="kat";
+      b.innerHTML='<span class="kik">'+ik+'</span><span class="kad">'+ad+'</span>'+
+                  (say?'<span class="ksay">'+say+'</span>':'');
+      b.onclick=()=>{tab=k;renderGallery();$("#setup").scrollTop=0;};
+      kt.appendChild(b);
+    };
+    if(fresh.length)ekle("new",t("yeni"),"✨",fresh.length);
+    cats.forEach(c=>ekle(c,c,katIkon(c),pub.filter(i=>i.cat===c).length));
+    if(fin.length)ekle("done",t("bitenler"),"✅",fin.length);
+    if(hid.length)ekle("hid",t("gizli"),"🙈",hid.length);
+    ekle("mine",t("resminiEkle"),"➕",mine.length||0);
+
+    const yarim=sonlar.map(id=>all.find(x=>x.id===id))
+                      .filter(x=>x&&!x.hid&&x.pct>0&&x.pct<100).slice(0,10);
+    const sb=$("#sonB"),sd=$("#son");
+    sb.hidden=sd.hidden=!yarim.length;
+    sd.innerHTML="";
+    yarim.forEach(it=>{
+      const b=document.createElement("button");
+      b.className="sonk";
+      b.innerHTML='<img src="'+(it.prev||it.d)+'" alt="">'+
+        '<i class="sfill" style="height:'+it.pct+'%"></i><b>%'+it.pct+'</b>';
+      b.onclick=()=>loadSrc(it.d,it.id,it.prev||"");
+      sd.appendChild(b);
+    });
+  }else{
+    tb.hidden=false;
+    $("#sonB").hidden=true;$("#son").hidden=true;
+    const geri=document.createElement("button");
+    geri.className="geri";geri.textContent="‹";
+    geri.onclick=()=>{tab="home";renderGallery();};
+    tb.appendChild(geri);
+    const ad=document.createElement("button");
+    ad.className="on";
+    const bul=tabs.find(x=>x.k===tab);
+    ad.textContent=bul?bul.l:tab;
+    tb.appendChild(ad);
+  }
+  const list=tab==="home"?[]:
+             tab==="done"?fin:tab==="hid"?hid:tab==="new"?fresh:tab==="mine"?mine:
              pub.filter(i=>tab==="all"||i.cat===tab);
   const g=$("#gallery");g.innerHTML="";
   const note=$("#mineNote");
@@ -1164,7 +1248,7 @@ async function renderGallery(){
   }
   const em=$("#empty");
   em.hidden=list.length>0;
-  em.hidden=list.length>0||tab==="mine";
+  em.hidden=list.length>0||tab==="mine"||tab==="home";
   em.textContent=tab==="hid"?t("bosGizli"):tab==="new"?t("bosYeni"):t("bosBolum");
 }
 
@@ -2359,6 +2443,7 @@ async function shrink(file){
 let lineImg=null;
 function loadSrc(src,id,lineSrc){
   curId=id||("x"+src.length);
+  sonEkle(curId);
   busy(true,"Resim okunuyor…");
   lineImg=null;
   const basla=()=>build();
