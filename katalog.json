@@ -295,12 +295,22 @@
     {
       "id": "kultur-01-xrgw",
       "t": "kultur 01",
-      "k": "Manzara",
+      "k": "Fantastik",
       "u": "https://safaksengul.github.io/boyama/resim/kultur-01-xrgw.jpg",
       "o": "https://safaksengul.github.io/boyama/resim/kultur-01-xrgw-cizim.jpg?v=mttuxuyu",
       "kilit": false,
       "p": "50% 25%",
       "e": 1788943785223
+    },
+    {
+      "id": "uzay-11-62ai",
+      "t": "uzay 11",
+      "k": "Fantastik",
+      "u": "https://safaksengul.github.io/boyama/resim/uzay-11-62ai.jpg",
+      "o": "https://safaksengul.github.io/boyama/resim/uzay-11-62ai-cizim.jpg?v=mttv67jw",
+      "kilit": false,
+      "p": "50% 25%",
+      "e": 1788944174781
     }
   ],
   "kaldir": []
