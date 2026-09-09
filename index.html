@@ -729,12 +729,12 @@ const css=c=>"rgb("+c[0]+","+c[1]+","+c[2]+")";
         {kilitTek:true}    -> dokunulan kilitli resmi açar          */
 const DENEME_MODU=true;   /* Google Play'e çıkarken false yap */
 const SHOP=[
-  {sku:"vip_yillik", ad:"VIP Yıllık", fiyat:"39,99 $", ek:"/ yıl", one:true, ikon:"tac",
+  {sku:"vip_yillik", ad:"Numbra+ Yıllık", fiyat:"39,99 $", ek:"/ yıl", one:true, ikon:"tac",
    rozet:"%58 TASARRUF", alt:"ayda yalnızca 3,33 $",
-   aciklama:"Aylık plana göre yılda 56 dolar daha ucuz.",
+   aciklama:"Aylık plana göre %58 daha ucuz.",
    ozellik:["İlk 3 gün ücretsiz","Tüm kilitli resimler","Reklam yok","Kendi resimlerin"],
    ver:{vipGun:365}},
-  {sku:"vip_aylik", ad:"VIP Aylık", fiyat:"7,99 $", ek:"/ ay", ikon:"tac",
+  {sku:"vip_aylik", ad:"Numbra+ Aylık", fiyat:"7,99 $", ek:"/ ay", ikon:"tac",
    aciklama:"Bütün kilitli resimler açılır, reklamlar kalkar.",
    ozellik:["İlk 3 gün ücretsiz","Tüm kilitli resimler","Reklam yok","Kendi resimlerin"],
    ver:{vipGun:30}},
@@ -744,7 +744,7 @@ const SHOP=[
    ver:{noads:true}},
   {sku:"kendi_resim", ad:"Kendi Resimlerin", fiyat:"2,99 $", ikon:"foto",
    aciklama:"Telefonundaki istediğin fotoğrafı boyamaya dönüştür, sınırsız.",
-   ozellik:["Sınırsız resim","Kalıcı","VIP'e dahil"],
+   ozellik:["Sınırsız resim","Kalıcı","Numbra+ ile gelir"],
    ver:{kendi:true}},
   {sku:"paket_buyuk", ad:"Büyük Paket", fiyat:"9,99 $", ikon:"sandik",
    rozet:"EN AVANTAJLI", aciklama:"Uzun süre yetecek kadar. Adedi en ucuz burada.",
@@ -765,10 +765,37 @@ const SHOP=[
 ];
 
 const FREE_KENDI=1;   /* ücretsiz eklenebilecek kendi resmi sayısı */
+
+/* ---------- koleksiyonlar (şimdilik kapalı) ----------
+   true yaptığında katalogdaki "koleksiyon" alanı devreye girer:
+   aynı koleksiyondaki resimler tek pakette satılır ve dükkânda ayrı kart olur.
+   80-100 resme ulaşmadan açma; kütüphanenin çoğunu kilitlemek kullanıcıyı kaçırır. */
+const KOLEKSIYON_ACIK=false;
+function koleksiyonAcikMi(k){
+  return isVip()||(ent.koleksiyon||[]).indexOf(k)>=0;
+}
+function koleksiyonKilitli(it){
+  if(!KOLEKSIYON_ACIK||!it.kol)return false;
+  return !koleksiyonAcikMi(it.kol);
+}
+/* katalogdaki koleksiyonlardan dükkân ürünleri üret */
+function koleksiyonUrunleri(){
+  if(!KOLEKSIYON_ACIK)return [];
+  const bul={};
+  (remote.ekle||[]).forEach(x=>{if(x.kol)bul[x.kol]=(bul[x.kol]||0)+1;});
+  return Object.keys(bul).filter(k=>!koleksiyonAcikMi(k)).map(k=>({
+    sku:"kol_"+k, ad:k, fiyat:"2,99 $", ikon:"sandik", koleksiyon:k,
+    aciklama:bul[k]+" resimlik özel koleksiyon.",
+    ozellik:[bul[k]+" resim","Kalıcı","Numbra+ ile gelir"],
+    ver:{koleksiyon:k}
+  }));
+}
 /* Bölgeye göre gösterilecek fiyatlar.
    Google Play bağlandığında fiyatlar oradan okunur ve bu tablo devre dışı kalır;
    burada yazanlar yalnızca gösterim içindir, gerçek tahsilat Play'in fiyatıyla olur.
    Play Console'da Türkiye fiyatlarını buradakilerle aynı gir.                 */
+/* Play bağlıyken fiyatlar oradan gelir ve bu tablo kullanılmaz.
+   Tabloda olmayan ülkelerde tarayıcı sürümü dolar fiyatını gösterir. */
 const YEREL_FIYAT={
   TR:{
     vip_yillik :{f:"599,99 ₺", ek:"/ yıl", rozet:"%50 TASARRUF", alt:"ayda yalnızca 50 ₺"},
@@ -791,19 +818,42 @@ function bolge(){
 }
 let playFiyat=null;   /* Play'den gelen gerçek fiyatlar */
 function yerelKayit(p){const t=YEREL_FIYAT[bolge()];return (t&&t[p.sku])||null;}
+/* Play'den gelen kayıt ya düz metin ya da {metin,tutar,birim} olabilir */
+function playKayit(sku){
+  const v=playFiyat&&playFiyat[sku];
+  if(!v)return null;
+  return (typeof v==="string")?{metin:v}:v;
+}
 function fiyatOf(p){
-  if(playFiyat&&playFiyat[p.sku])return playFiyat[p.sku];
+  const k=playKayit(p.sku);
+  if(k&&k.metin)return k.metin;
   const y=yerelKayit(p);
   return y&&y.f?y.f:p.fiyat;
 }
+/* yıllık planın aylık karşılığını gerçek tutardan hesapla */
+function aylikKarsilik(p){
+  const k=playKayit(p.sku);
+  if(!k||!k.tutar||!k.birim)return "";
+  try{
+    const b=new Intl.NumberFormat(navigator.language||"en",
+      {style:"currency",currency:k.birim,maximumFractionDigits:2}).format(k.tutar/12);
+    return t("aydaSadece").replace("%s",b);
+  }catch(e){return "";}
+}
 function ekOf(p){
-  if(playFiyat&&playFiyat[p.sku])return p.ek||"";
+  if(playKayit(p.sku))return p.ek||"";
   const y=yerelKayit(p);
   return (y&&y.ek!==undefined)?y.ek:(p.ek||"");
 }
 function altOf(p){
+  if(p.sku==="vip_yillik"){
+    const hesap=aylikKarsilik(p);
+    if(hesap)return hesap;
+    if(playKayit(p.sku))return "";      /* Play fiyatı var ama tutar yok: uydurma yapma */
+  }
   const y=yerelKayit(p);
-  return (y&&y.alt)?y.alt:(p.alt||"");
+  if(y)return y.alt||"";
+  return playKayit(p.sku)?"":(p.alt||"");
 }
 function rozetOf(p){
   const y=yerelKayit(p);
@@ -817,14 +867,14 @@ async function fiyatlariCek(){
   }catch(e){}
 }
 
-let ent={vipUntil:0,noads:false,acik:[],kendi:false};
+let ent={vipUntil:0,noads:false,acik:[],kendi:false,koleksiyon:[]};
 const isVip=()=>ent.vipUntil>Date.now();
 const adsOff=()=>ent.noads||isVip();
 const acikMi=id=>isVip()||ent.acik.indexOf(id)>=0;
 const kendiSinirsiz=()=>isVip()||!!ent.kendi;
 async function loadEnt(){
   const e=await store.get("ent");
-  if(e)ent={vipUntil:e.vipUntil||0,noads:!!e.noads,acik:e.acik||[],kendi:!!e.kendi};
+  if(e)ent={vipUntil:e.vipUntil||0,noads:!!e.noads,acik:e.acik||[],kendi:!!e.kendi,koleksiyon:e.koleksiyon||[]};
   /* Mağaza köprüsü varsa doğrusu odur: cihazdaki kayıt kurcalanmış olabilir */
   if(window.Billing&&typeof window.Billing.restore==="function"){
     try{
@@ -861,6 +911,8 @@ async function buyDo(p,ctxId){
   if(v.vipGun)ent.vipUntil=Math.max(ent.vipUntil,Date.now())+v.vipGun*864e5;
   if(v.noads)ent.noads=true;
   if(v.kendi)ent.kendi=true;
+  if(v.koleksiyon&&(ent.koleksiyon||[]).indexOf(v.koleksiyon)<0)
+    ent.koleksiyon=(ent.koleksiyon||[]).concat([v.koleksiyon]);
   if(v.kilitTek&&ctxId&&ent.acik.indexOf(ctxId)<0)ent.acik.push(ctxId);
   ["bulb","bucket","bomb"].forEach(k=>{if(v[k])items[k]=(items[k]||0)+v[k];});
   await store.set("ent",ent);
@@ -965,7 +1017,7 @@ function openShop(ctxId){
     '<button class="abtn" id="sRestore">Satın alımlarımı geri yükle</button></div>';
   document.body.appendChild(w);
   const L=w.querySelector("#sList");
-  SHOP.forEach(p=>{
+  SHOP.concat(koleksiyonUrunleri()).forEach(p=>{
     if(p.sadeceKilit&&!ctxId)return;
     if(p.ver.noads&&adsOff())return;
     const c=document.createElement("button");
@@ -1025,6 +1077,7 @@ async function loadCatalog(){
       e:Number(x.e)||0,
       o:(x.o&&/^https:\/\//.test(x.o))?String(x.o):"",
       kilit:!!x.kilit,
+      kol:x.kol?String(x.kol).slice(0,24):"",
       u:String(x.u),
       p:String(x.p||"50% 25%").slice(0,20)
     }));
@@ -1089,7 +1142,7 @@ async function allItems(){
   const out=[];
   PRESETS.forEach((p,i)=>out.push({id:"p"+i,t:p.t,d:p.d,p:p.p,hp:p.hp,base:p.k||"Diğer",own:false}));
   remote.ekle.forEach(x=>out.push({id:x.id,t:x.t,d:x.u,p:x.p,base:x.k,own:false,net:true,
-                                   e:x.e||0,prev:x.o||"",kilit:!!x.kilit}));
+                                   e:x.e||0,prev:x.o||"",kilit:!!x.kilit,kol:x.kol||""}));
   for(const it of await myList()){
     const rec=await store.get("img:"+it.id);
     if(rec)out.push({id:it.id,t:rec.t,d:rec.d,p:rec.p,base:"Benim",own:true});
@@ -1228,8 +1281,8 @@ async function renderGallery(){
     b.className="card"+(it.pct>=100?" fin":"")+(it.hid?" hid":"");
     let extra='<i class="more" title="Seçenekler">⋯</i>';
     if(it.fresh)extra+='<i class="ribbon">YENİ</i>';
-    const kilitli=it.kilit&&!acikMi(it.id);
-    if(kilitli)extra+='<i class="lockv"></i><i class="lock">🔒 VIP</i>';
+    const kilitli=(it.kilit&&!acikMi(it.id))||koleksiyonKilitli(it);
+    if(kilitli)extra+='<i class="lockv"></i><i class="lock">🔒 Numbra+</i>';
     if(it.pct>0&&it.pct<100)
       extra+='<i class="fillmask" style="height:'+it.pct+'%"></i><i class="badge">%'+it.pct+'</i>';
     b.innerHTML='<img class="thumb" src="'+(it.prev||it.d)+'" alt="'+it.t+'" style="object-position:'+(it.p||"50% 25%")+'">'+extra;
@@ -1887,6 +1940,7 @@ function applySketch(el,src){
    Yeni dil eklemek için aşağıya kod ve karşılıkları yazman yeterli.   */
 const DILLER={
  tr:{
+  aydaSadece:"ayda yalnızca %s",
   altbaslik:"Özel tasarım. Sınırsız renk. Kendi dünyan.",
   tumu:"Tümü", yeni:"Yeni", bitenler:"Bitenler", gizli:"Gizli", resminiEkle:"Resmini ekle",
   gunResmi:"GÜNÜN RESMİ", basla:"Boyamaya başla", resimEkle:"Resim ekle", sinirsizAc:"Sınırsız aç",
@@ -1908,6 +1962,7 @@ const DILLER={
   gunlukOdul:"Günlük ödül", devam:"Devam", baslayalim:"Başlayalım", gec:"Geç"
  },
  en:{
+  aydaSadece:"only %s a month",
   altbaslik:"Unique art. Endless colours. Your own world.",
   tumu:"All", yeni:"New", bitenler:"Finished", gizli:"Hidden", resminiEkle:"Your photos",
   gunResmi:"PICTURE OF THE DAY", basla:"Start painting", resimEkle:"Add photo", sinirsizAc:"Unlock",
@@ -1929,6 +1984,7 @@ const DILLER={
   gunlukOdul:"Daily reward", devam:"Next", baslayalim:"Let's go", gec:"Skip"
  },
  es:{
+  aydaSadece:"solo %s al mes",
   altbaslik:"Arte único. Colores infinitos. Tu propio mundo.",
   tumu:"Todo", yeni:"Nuevo", bitenler:"Terminadas", gizli:"Ocultas", resminiEkle:"Tus fotos",
   gunResmi:"IMAGEN DEL DÍA", basla:"Empezar a pintar", resimEkle:"Añadir foto", sinirsizAc:"Desbloquear",
@@ -1950,6 +2006,7 @@ const DILLER={
   gunlukOdul:"Recompensa diaria", devam:"Siguiente", baslayalim:"Vamos", gec:"Saltar"
  },
  de:{
+  aydaSadece:"nur %s pro Monat",
   altbaslik:"Eigene Motive. Endlose Farben. Deine Welt.",
   tumu:"Alle", yeni:"Neu", bitenler:"Fertig", gizli:"Ausgeblendet", resminiEkle:"Deine Fotos",
   gunResmi:"BILD DES TAGES", basla:"Malen starten", resimEkle:"Foto hinzufügen", sinirsizAc:"Freischalten",
@@ -1971,6 +2028,7 @@ const DILLER={
   gunlukOdul:"Tagesbelohnung", devam:"Weiter", baslayalim:"Los geht's", gec:"Überspringen"
  },
  fr:{
+  aydaSadece:"seulement %s par mois",
   altbaslik:"Art unique. Couleurs infinies. Ton monde.",
   tumu:"Tout", yeni:"Nouveau", bitenler:"Terminées", gizli:"Masquées", resminiEkle:"Tes photos",
   gunResmi:"IMAGE DU JOUR", basla:"Commencer", resimEkle:"Ajouter une photo", sinirsizAc:"Débloquer",
@@ -1992,6 +2050,7 @@ const DILLER={
   gunlukOdul:"Récompense du jour", devam:"Suivant", baslayalim:"C'est parti", gec:"Passer"
  },
  ru:{
+  aydaSadece:"всего %s в месяц",
   altbaslik:"Особые работы. Бесконечные цвета. Твой мир.",
   tumu:"Все", yeni:"Новое", bitenler:"Завершённые", gizli:"Скрытые", resminiEkle:"Твои фото",
   gunResmi:"КАРТИНКА ДНЯ", basla:"Начать", resimEkle:"Добавить фото", sinirsizAc:"Открыть",
@@ -2020,12 +2079,12 @@ const DIL=(()=>{
   }catch(e){return "en";}
 })();
 const METIN={
- tr:{urun:{"vip_yillik": ["VIP Yıllık", "Aylık plana göre yılda 56 dolar daha ucuz.", ["İlk 3 gün ücretsiz", "Tüm kilitli resimler", "Reklam yok", "Kendi resimlerin"]], "vip_aylik": ["VIP Aylık", "Bütün kilitli resimler açılır, reklamlar kalkar.", ["İlk 3 gün ücretsiz", "Tüm kilitli resimler", "Reklam yok", "Kendi resimlerin"]], "reklamsiz": ["Reklamsız", "Reklamlar kalıcı olarak kapanır, bir daha ödeme yok.", ["Sonsuza kadar", "Kilitli resimler hariç"]], "kendi_resim": ["Kendi Resimlerin", "Telefonundaki fotoğrafı boyamaya dönüştür, sınırsız.", ["Sınırsız resim", "Kalıcı", "VIP'e dahil"]], "paket_buyuk": ["Büyük Paket", "Uzun süre yetecek kadar. Adedi en ucuz burada.", ["30 ipucu", "12 kova", "6 dinamit"]], "paket_orta": ["Boya Paketi", "Takıldığın yerleri aşmak için dengeli bir paket.", ["10 ipucu", "4 kova", "2 dinamit"]], "paket_kucuk": ["Küçük Paket", "Denemek isteyenler için.", ["3 ipucu", "1 kova", "1 dinamit"]], "kilit_tek": ["Bu resmi aç", "Yalnızca seçtiğin resmi kalıcı olarak açar.", ["Tek resim", "Kalıcı"]]},rozet:[["İlk adım", "İlk resmini bitir"], ["Koleksiyoncu", "5 resim bitir"], ["Usta boyacı", "20 resim bitir"], ["Efsane", "50 resim bitir"], ["Isınma turu", "100 bölge boya"], ["Sabırlı el", "500 bölge boya"], ["Bitmeyen heves", "5000 bölge boya"], ["Demir bilek", "20000 bölge boya"], ["Alışkanlık", "3 gün üst üste gel"], ["Haftalık", "7 gün üst üste gel"], ["Bir ay boyunca", "30 gün üst üste gel"], ["Renk avcısı", "50 rengi bitir"], ["Palet ustası", "300 rengi bitir"], ["Aydınlanma", "25 ipucu kullan"], ["Kovacı", "25 kova kullan"], ["Patlayıcı uzman", "15 dinamit patlat"], ["Gece kuşu", "Gece 00-05 arası boya"], ["Uykusuz", "20 gece boyama yap"], ["Gurur duydum", "Bir resmini paylaş"], ["Mükemmeliyetçi", "20 kez geri al"]],tanit:[["Sayılarla boyama", "Her bölgenin bir numarası var. Alttan o numaralı rengi seç, bölgeye dokun."], ["Kaybolma", "Soldaki büyüteç seni kalan bölgeye götürür. Yanlış yere dokunursan doğru rengi söyler."], ["Yardımcılar", "Boyadıkça ipucu, kova ve dinamit kazanırsın. Her gün gelirsen hediye seni bekler."]]},
- en:{urun:{"vip_yillik": ["VIP Yearly", "Save 56 dollars a year compared to monthly.", ["3 days free", "All locked pictures", "No ads", "Your own photos"]], "vip_aylik": ["VIP Monthly", "Unlocks every picture and removes all ads.", ["3 days free", "All locked pictures", "No ads", "Your own photos"]], "reklamsiz": ["Ad-free", "Ads are gone for good, no further payment.", ["Forever", "Locked pictures not included"]], "kendi_resim": ["Your Own Photos", "Turn any photo into a painting, unlimited.", ["Unlimited photos", "Permanent", "Included in VIP"]], "paket_buyuk": ["Big Pack", "Enough to last a long while. Best value per item.", ["30 hints", "12 buckets", "6 bombs"]], "paket_orta": ["Paint Pack", "A balanced pack to get past the tricky parts.", ["10 hints", "4 buckets", "2 bombs"]], "paket_kucuk": ["Small Pack", "For a quick try.", ["3 hints", "1 bucket", "1 bomb"]], "kilit_tek": ["Unlock this picture", "Unlocks only the picture you picked, forever.", ["One picture", "Permanent"]]},rozet:[["First step", "Finish your first picture"], ["Collector", "Finish 5 pictures"], ["Master painter", "Finish 20 pictures"], ["Legend", "Finish 50 pictures"], ["Warm-up", "Paint 100 areas"], ["Steady hand", "Paint 500 areas"], ["Never tired", "Paint 5000 areas"], ["Iron wrist", "Paint 20000 areas"], ["Habit", "Come back 3 days in a row"], ["Weekly", "Come back 7 days in a row"], ["A whole month", "Come back 30 days in a row"], ["Colour hunter", "Finish 50 colours"], ["Palette master", "Finish 300 colours"], ["Lightbulb", "Use 25 hints"], ["Bucket fan", "Use 25 buckets"], ["Demolition expert", "Set off 15 bombs"], ["Night owl", "Paint between midnight and 5am"], ["Sleepless", "Paint on 20 nights"], ["So proud", "Share one of your pictures"], ["Perfectionist", "Undo 20 times"]],tanit:[["Paint by number", "Every area has a number. Pick that colour below and tap the area."], ["Never get lost", "The magnifier takes you to what's left. Tap the wrong spot and it tells you the right colour."], ["Helpers", "Painting earns hints, buckets and bombs. Come back daily for a gift."]]},
- es:{urun:{"vip_yillik": ["VIP Anual", "Ahorra 56 dólares al año frente al plan mensual.", ["3 días gratis", "Todas las imágenes", "Sin anuncios", "Tus propias fotos"]], "vip_aylik": ["VIP Mensual", "Desbloquea todas las imágenes y quita los anuncios.", ["3 días gratis", "Todas las imágenes", "Sin anuncios", "Tus propias fotos"]], "reklamsiz": ["Sin anuncios", "Los anuncios desaparecen para siempre.", ["Para siempre", "Sin imágenes bloqueadas"]], "kendi_resim": ["Tus propias fotos", "Convierte cualquier foto en un dibujo para pintar.", ["Fotos ilimitadas", "Permanente", "Incluido en VIP"]], "paket_buyuk": ["Pack grande", "Para rato. La mejor relación por unidad.", ["30 pistas", "12 cubos", "6 bombas"]], "paket_orta": ["Pack de pintura", "Un pack equilibrado para los momentos difíciles.", ["10 pistas", "4 cubos", "2 bombas"]], "paket_kucuk": ["Pack pequeño", "Para probar.", ["3 pistas", "1 cubo", "1 bomba"]], "kilit_tek": ["Desbloquear esta imagen", "Desbloquea solo la imagen elegida, para siempre.", ["Una imagen", "Permanente"]]},rozet:[["Primer paso", "Termina tu primera imagen"], ["Coleccionista", "Termina 5 imágenes"], ["Maestro pintor", "Termina 20 imágenes"], ["Leyenda", "Termina 50 imágenes"], ["Calentamiento", "Pinta 100 áreas"], ["Pulso firme", "Pinta 500 áreas"], ["Sin cansancio", "Pinta 5000 áreas"], ["Muñeca de hierro", "Pinta 20000 áreas"], ["Hábito", "Vuelve 3 días seguidos"], ["Semanal", "Vuelve 7 días seguidos"], ["Todo un mes", "Vuelve 30 días seguidos"], ["Cazador de colores", "Termina 50 colores"], ["Maestro de la paleta", "Termina 300 colores"], ["Bombilla", "Usa 25 pistas"], ["Fan del cubo", "Usa 25 cubos"], ["Experto en demolición", "Lanza 15 bombas"], ["Ave nocturna", "Pinta entre las 00 y las 05"], ["Insomne", "Pinta 20 noches"], ["Qué orgullo", "Comparte una imagen"], ["Perfeccionista", "Deshaz 20 veces"]],tanit:[["Pintar por números", "Cada área tiene un número. Elige ese color abajo y toca el área."], ["No te pierdas", "La lupa te lleva a lo que falta. Si tocas mal, te dice el color correcto."], ["Ayudas", "Pintando ganas pistas, cubos y bombas. Vuelve cada día por un regalo."]]},
- de:{urun:{"vip_yillik": ["VIP Jährlich", "56 Dollar günstiger als der Monatsplan.", ["3 Tage gratis", "Alle Bilder frei", "Keine Werbung", "Eigene Fotos"]], "vip_aylik": ["VIP Monatlich", "Schaltet alle Bilder frei und entfernt Werbung.", ["3 Tage gratis", "Alle Bilder frei", "Keine Werbung", "Eigene Fotos"]], "reklamsiz": ["Werbefrei", "Werbung ist dauerhaft weg, keine weiteren Kosten.", ["Für immer", "Ohne gesperrte Bilder"]], "kendi_resim": ["Eigene Fotos", "Mach aus jedem Foto ein Malbild, unbegrenzt.", ["Unbegrenzt", "Dauerhaft", "In VIP enthalten"]], "paket_buyuk": ["Großes Paket", "Reicht lange. Bester Preis pro Stück.", ["30 Tipps", "12 Eimer", "6 Bomben"]], "paket_orta": ["Farbpaket", "Ausgewogen für schwierige Stellen.", ["10 Tipps", "4 Eimer", "2 Bomben"]], "paket_kucuk": ["Kleines Paket", "Zum Ausprobieren.", ["3 Tipps", "1 Eimer", "1 Bombe"]], "kilit_tek": ["Dieses Bild freischalten", "Schaltet nur das gewählte Bild frei, dauerhaft.", ["Ein Bild", "Dauerhaft"]]},rozet:[["Erster Schritt", "Beende dein erstes Bild"], ["Sammler", "Beende 5 Bilder"], ["Meistermaler", "Beende 20 Bilder"], ["Legende", "Beende 50 Bilder"], ["Aufwärmen", "Male 100 Flächen"], ["Ruhige Hand", "Male 500 Flächen"], ["Nie müde", "Male 5000 Flächen"], ["Eisernes Handgelenk", "Male 20000 Flächen"], ["Gewohnheit", "Komm 3 Tage hintereinander"], ["Wöchentlich", "Komm 7 Tage hintereinander"], ["Einen ganzen Monat", "Komm 30 Tage hintereinander"], ["Farbjäger", "Beende 50 Farben"], ["Palettenmeister", "Beende 300 Farben"], ["Geistesblitz", "Nutze 25 Tipps"], ["Eimer-Fan", "Nutze 25 Eimer"], ["Sprengmeister", "Zünde 15 Bomben"], ["Nachteule", "Male zwischen 0 und 5 Uhr"], ["Schlaflos", "Male in 20 Nächten"], ["Stolz", "Teile eines deiner Bilder"], ["Perfektionist", "Mach 20 Mal rückgängig"]],tanit:[["Malen nach Zahlen", "Jede Fläche hat eine Zahl. Wähle unten die Farbe und tippe die Fläche an."], ["Nie verlieren", "Die Lupe bringt dich zum Rest. Tippst du falsch, nennt sie die richtige Farbe."], ["Helfer", "Beim Malen verdienst du Tipps, Eimer und Bomben. Täglich wartet ein Geschenk."]]},
- fr:{urun:{"vip_yillik": ["VIP Annuel", "56 dollars d'économie par an face au mensuel.", ["3 jours offerts", "Toutes les images", "Sans publicité", "Tes propres photos"]], "vip_aylik": ["VIP Mensuel", "Débloque toutes les images et retire les publicités.", ["3 jours offerts", "Toutes les images", "Sans publicité", "Tes propres photos"]], "reklamsiz": ["Sans publicité", "Les publicités disparaissent définitivement.", ["Pour toujours", "Images verrouillées non incluses"]], "kendi_resim": ["Tes propres photos", "Transforme n'importe quelle photo en coloriage.", ["Photos illimitées", "Permanent", "Inclus dans VIP"]], "paket_buyuk": ["Grand pack", "De quoi tenir longtemps. Meilleur rapport.", ["30 indices", "12 seaux", "6 bombes"]], "paket_orta": ["Pack peinture", "Un pack équilibré pour les passages difficiles.", ["10 indices", "4 seaux", "2 bombes"]], "paket_kucuk": ["Petit pack", "Pour essayer.", ["3 indices", "1 seau", "1 bombe"]], "kilit_tek": ["Débloquer cette image", "Débloque uniquement l'image choisie, pour toujours.", ["Une image", "Permanent"]]},rozet:[["Premier pas", "Termine ta première image"], ["Collectionneur", "Termine 5 images"], ["Maître peintre", "Termine 20 images"], ["Légende", "Termine 50 images"], ["Échauffement", "Peins 100 zones"], ["Main sûre", "Peins 500 zones"], ["Jamais fatigué", "Peins 5000 zones"], ["Poignet d'acier", "Peins 20000 zones"], ["Habitude", "Reviens 3 jours de suite"], ["Hebdomadaire", "Reviens 7 jours de suite"], ["Un mois entier", "Reviens 30 jours de suite"], ["Chasseur de couleurs", "Termine 50 couleurs"], ["Maître de la palette", "Termine 300 couleurs"], ["Ampoule", "Utilise 25 indices"], ["Fan du seau", "Utilise 25 seaux"], ["Expert en explosifs", "Fais exploser 15 bombes"], ["Oiseau de nuit", "Peins entre minuit et 5h"], ["Insomniaque", "Peins pendant 20 nuits"], ["Si fier", "Partage une de tes images"], ["Perfectionniste", "Annule 20 fois"]],tanit:[["Peinture par numéros", "Chaque zone a un numéro. Choisis la couleur en bas et touche la zone."], ["Ne te perds jamais", "La loupe t'emmène à ce qu'il reste. En cas d'erreur, elle indique la bonne couleur."], ["Aides", "En peignant tu gagnes indices, seaux et bombes. Un cadeau t'attend chaque jour."]]},
- ru:{urun:{"vip_yillik": ["VIP на год", "На 56 долларов дешевле, чем помесячно.", ["3 дня бесплатно", "Все картинки", "Без рекламы", "Свои фото"]], "vip_aylik": ["VIP на месяц", "Открывает все картинки и убирает рекламу.", ["3 дня бесплатно", "Все картинки", "Без рекламы", "Свои фото"]], "reklamsiz": ["Без рекламы", "Реклама исчезает навсегда, больше платить не нужно.", ["Навсегда", "Без закрытых картинок"]], "kendi_resim": ["Свои фото", "Преврати любое фото в раскраску, без ограничений.", ["Без ограничений", "Навсегда", "Входит в VIP"]], "paket_buyuk": ["Большой набор", "Хватит надолго. Самая выгодная цена.", ["30 подсказок", "12 вёдер", "6 бомб"]], "paket_orta": ["Набор красок", "Сбалансированный набор для трудных мест.", ["10 подсказок", "4 ведра", "2 бомбы"]], "paket_kucuk": ["Малый набор", "Чтобы попробовать.", ["3 подсказки", "1 ведро", "1 бомба"]], "kilit_tek": ["Открыть эту картинку", "Открывает только выбранную картинку, навсегда.", ["Одна картинка", "Навсегда"]]},rozet:[["Первый шаг", "Заверши первую картинку"], ["Коллекционер", "Заверши 5 картинок"], ["Мастер", "Заверши 20 картинок"], ["Легенда", "Заверши 50 картинок"], ["Разминка", "Закрась 100 областей"], ["Твёрдая рука", "Закрась 500 областей"], ["Неутомимый", "Закрась 5000 областей"], ["Железное запястье", "Закрась 20000 областей"], ["Привычка", "Заходи 3 дня подряд"], ["Неделя", "Заходи 7 дней подряд"], ["Целый месяц", "Заходи 30 дней подряд"], ["Охотник за цветом", "Заверши 50 цветов"], ["Мастер палитры", "Заверши 300 цветов"], ["Озарение", "Используй 25 подсказок"], ["Любитель ведра", "Используй 25 вёдер"], ["Подрывник", "Взорви 15 бомб"], ["Сова", "Рисуй с 00 до 05"], ["Без сна", "Рисуй 20 ночей"], ["Горжусь", "Поделись картинкой"], ["Перфекционист", "Отмени 20 раз"]],tanit:[["Раскраска по номерам", "У каждой области есть номер. Выбери цвет внизу и коснись области."], ["Не потеряешься", "Лупа приведёт к оставшимся местам. При ошибке подскажет нужный цвет."], ["Помощники", "За раскрашивание получаешь подсказки, вёдра и бомбы. Каждый день ждёт подарок."]]}
+ tr:{urun:{"vip_yillik": ["Numbra+ Yıllık", "Aylık plana göre %58 daha ucuz.", ["İlk 3 gün ücretsiz", "Tüm kilitli resimler", "Reklam yok", "Kendi resimlerin"]], "vip_aylik": ["Numbra+ Aylık", "Bütün kilitli resimler açılır, reklamlar kalkar.", ["İlk 3 gün ücretsiz", "Tüm kilitli resimler", "Reklam yok", "Kendi resimlerin"]], "reklamsiz": ["Reklamsız", "Reklamlar kalıcı olarak kapanır, bir daha ödeme yok.", ["Sonsuza kadar", "Kilitli resimler hariç"]], "kendi_resim": ["Kendi Resimlerin", "Telefonundaki fotoğrafı boyamaya dönüştür, sınırsız.", ["Sınırsız resim", "Kalıcı", "Numbra+ ile gelir"]], "paket_buyuk": ["Büyük Paket", "Uzun süre yetecek kadar. Adedi en ucuz burada.", ["30 ipucu", "12 kova", "6 dinamit"]], "paket_orta": ["Boya Paketi", "Takıldığın yerleri aşmak için dengeli bir paket.", ["10 ipucu", "4 kova", "2 dinamit"]], "paket_kucuk": ["Küçük Paket", "Denemek isteyenler için.", ["3 ipucu", "1 kova", "1 dinamit"]], "kilit_tek": ["Bu resmi aç", "Yalnızca seçtiğin resmi kalıcı olarak açar.", ["Tek resim", "Kalıcı"]]},rozet:[["İlk adım", "İlk resmini bitir"], ["Koleksiyoncu", "5 resim bitir"], ["Usta boyacı", "20 resim bitir"], ["Efsane", "50 resim bitir"], ["Isınma turu", "100 bölge boya"], ["Sabırlı el", "500 bölge boya"], ["Bitmeyen heves", "5000 bölge boya"], ["Demir bilek", "20000 bölge boya"], ["Alışkanlık", "3 gün üst üste gel"], ["Haftalık", "7 gün üst üste gel"], ["Bir ay boyunca", "30 gün üst üste gel"], ["Renk avcısı", "50 rengi bitir"], ["Palet ustası", "300 rengi bitir"], ["Aydınlanma", "25 ipucu kullan"], ["Kovacı", "25 kova kullan"], ["Patlayıcı uzman", "15 dinamit patlat"], ["Gece kuşu", "Gece 00-05 arası boya"], ["Uykusuz", "20 gece boyama yap"], ["Gurur duydum", "Bir resmini paylaş"], ["Mükemmeliyetçi", "20 kez geri al"]],tanit:[["Sayılarla boyama", "Her bölgenin bir numarası var. Alttan o numaralı rengi seç, bölgeye dokun."], ["Kaybolma", "Soldaki büyüteç seni kalan bölgeye götürür. Yanlış yere dokunursan doğru rengi söyler."], ["Yardımcılar", "Boyadıkça ipucu, kova ve dinamit kazanırsın. Her gün gelirsen hediye seni bekler."]]},
+ en:{urun:{"vip_yillik": ["Numbra+ Yearly", "58% cheaper than paying monthly.", ["3 days free", "All locked pictures", "No ads", "Your own photos"]], "vip_aylik": ["Numbra+ Monthly", "Unlocks every picture and removes all ads.", ["3 days free", "All locked pictures", "No ads", "Your own photos"]], "reklamsiz": ["Ad-free", "Ads are gone for good, no further payment.", ["Forever", "Locked pictures not included"]], "kendi_resim": ["Your Own Photos", "Turn any photo into a painting, unlimited.", ["Unlimited photos", "Permanent", "Included in Numbra+"]], "paket_buyuk": ["Big Pack", "Enough to last a long while. Best value per item.", ["30 hints", "12 buckets", "6 bombs"]], "paket_orta": ["Paint Pack", "A balanced pack to get past the tricky parts.", ["10 hints", "4 buckets", "2 bombs"]], "paket_kucuk": ["Small Pack", "For a quick try.", ["3 hints", "1 bucket", "1 bomb"]], "kilit_tek": ["Unlock this picture", "Unlocks only the picture you picked, forever.", ["One picture", "Permanent"]]},rozet:[["First step", "Finish your first picture"], ["Collector", "Finish 5 pictures"], ["Master painter", "Finish 20 pictures"], ["Legend", "Finish 50 pictures"], ["Warm-up", "Paint 100 areas"], ["Steady hand", "Paint 500 areas"], ["Never tired", "Paint 5000 areas"], ["Iron wrist", "Paint 20000 areas"], ["Habit", "Come back 3 days in a row"], ["Weekly", "Come back 7 days in a row"], ["A whole month", "Come back 30 days in a row"], ["Colour hunter", "Finish 50 colours"], ["Palette master", "Finish 300 colours"], ["Lightbulb", "Use 25 hints"], ["Bucket fan", "Use 25 buckets"], ["Demolition expert", "Set off 15 bombs"], ["Night owl", "Paint between midnight and 5am"], ["Sleepless", "Paint on 20 nights"], ["So proud", "Share one of your pictures"], ["Perfectionist", "Undo 20 times"]],tanit:[["Paint by number", "Every area has a number. Pick that colour below and tap the area."], ["Never get lost", "The magnifier takes you to what's left. Tap the wrong spot and it tells you the right colour."], ["Helpers", "Painting earns hints, buckets and bombs. Come back daily for a gift."]]},
+ es:{urun:{"vip_yillik": ["Numbra+ Anual", "Un 58% más barato que el plan mensual.", ["3 días gratis", "Todas las imágenes", "Sin anuncios", "Tus propias fotos"]], "vip_aylik": ["Numbra+ Mensual", "Desbloquea todas las imágenes y quita los anuncios.", ["3 días gratis", "Todas las imágenes", "Sin anuncios", "Tus propias fotos"]], "reklamsiz": ["Sin anuncios", "Los anuncios desaparecen para siempre.", ["Para siempre", "Sin imágenes bloqueadas"]], "kendi_resim": ["Tus propias fotos", "Convierte cualquier foto en un dibujo para pintar.", ["Fotos ilimitadas", "Permanente", "Incluido en Numbra+"]], "paket_buyuk": ["Pack grande", "Para rato. La mejor relación por unidad.", ["30 pistas", "12 cubos", "6 bombas"]], "paket_orta": ["Pack de pintura", "Un pack equilibrado para los momentos difíciles.", ["10 pistas", "4 cubos", "2 bombas"]], "paket_kucuk": ["Pack pequeño", "Para probar.", ["3 pistas", "1 cubo", "1 bomba"]], "kilit_tek": ["Desbloquear esta imagen", "Desbloquea solo la imagen elegida, para siempre.", ["Una imagen", "Permanente"]]},rozet:[["Primer paso", "Termina tu primera imagen"], ["Coleccionista", "Termina 5 imágenes"], ["Maestro pintor", "Termina 20 imágenes"], ["Leyenda", "Termina 50 imágenes"], ["Calentamiento", "Pinta 100 áreas"], ["Pulso firme", "Pinta 500 áreas"], ["Sin cansancio", "Pinta 5000 áreas"], ["Muñeca de hierro", "Pinta 20000 áreas"], ["Hábito", "Vuelve 3 días seguidos"], ["Semanal", "Vuelve 7 días seguidos"], ["Todo un mes", "Vuelve 30 días seguidos"], ["Cazador de colores", "Termina 50 colores"], ["Maestro de la paleta", "Termina 300 colores"], ["Bombilla", "Usa 25 pistas"], ["Fan del cubo", "Usa 25 cubos"], ["Experto en demolición", "Lanza 15 bombas"], ["Ave nocturna", "Pinta entre las 00 y las 05"], ["Insomne", "Pinta 20 noches"], ["Qué orgullo", "Comparte una imagen"], ["Perfeccionista", "Deshaz 20 veces"]],tanit:[["Pintar por números", "Cada área tiene un número. Elige ese color abajo y toca el área."], ["No te pierdas", "La lupa te lleva a lo que falta. Si tocas mal, te dice el color correcto."], ["Ayudas", "Pintando ganas pistas, cubos y bombas. Vuelve cada día por un regalo."]]},
+ de:{urun:{"vip_yillik": ["Numbra+ Jährlich", "58% günstiger als der Monatsplan.", ["3 Tage gratis", "Alle Bilder frei", "Keine Werbung", "Eigene Fotos"]], "vip_aylik": ["Numbra+ Monatlich", "Schaltet alle Bilder frei und entfernt Werbung.", ["3 Tage gratis", "Alle Bilder frei", "Keine Werbung", "Eigene Fotos"]], "reklamsiz": ["Werbefrei", "Werbung ist dauerhaft weg, keine weiteren Kosten.", ["Für immer", "Ohne gesperrte Bilder"]], "kendi_resim": ["Eigene Fotos", "Mach aus jedem Foto ein Malbild, unbegrenzt.", ["Unbegrenzt", "Dauerhaft", "In Numbra+ enthalten"]], "paket_buyuk": ["Großes Paket", "Reicht lange. Bester Preis pro Stück.", ["30 Tipps", "12 Eimer", "6 Bomben"]], "paket_orta": ["Farbpaket", "Ausgewogen für schwierige Stellen.", ["10 Tipps", "4 Eimer", "2 Bomben"]], "paket_kucuk": ["Kleines Paket", "Zum Ausprobieren.", ["3 Tipps", "1 Eimer", "1 Bombe"]], "kilit_tek": ["Dieses Bild freischalten", "Schaltet nur das gewählte Bild frei, dauerhaft.", ["Ein Bild", "Dauerhaft"]]},rozet:[["Erster Schritt", "Beende dein erstes Bild"], ["Sammler", "Beende 5 Bilder"], ["Meistermaler", "Beende 20 Bilder"], ["Legende", "Beende 50 Bilder"], ["Aufwärmen", "Male 100 Flächen"], ["Ruhige Hand", "Male 500 Flächen"], ["Nie müde", "Male 5000 Flächen"], ["Eisernes Handgelenk", "Male 20000 Flächen"], ["Gewohnheit", "Komm 3 Tage hintereinander"], ["Wöchentlich", "Komm 7 Tage hintereinander"], ["Einen ganzen Monat", "Komm 30 Tage hintereinander"], ["Farbjäger", "Beende 50 Farben"], ["Palettenmeister", "Beende 300 Farben"], ["Geistesblitz", "Nutze 25 Tipps"], ["Eimer-Fan", "Nutze 25 Eimer"], ["Sprengmeister", "Zünde 15 Bomben"], ["Nachteule", "Male zwischen 0 und 5 Uhr"], ["Schlaflos", "Male in 20 Nächten"], ["Stolz", "Teile eines deiner Bilder"], ["Perfektionist", "Mach 20 Mal rückgängig"]],tanit:[["Malen nach Zahlen", "Jede Fläche hat eine Zahl. Wähle unten die Farbe und tippe die Fläche an."], ["Nie verlieren", "Die Lupe bringt dich zum Rest. Tippst du falsch, nennt sie die richtige Farbe."], ["Helfer", "Beim Malen verdienst du Tipps, Eimer und Bomben. Täglich wartet ein Geschenk."]]},
+ fr:{urun:{"vip_yillik": ["Numbra+ Annuel", "58% moins cher que le plan mensuel.", ["3 jours offerts", "Toutes les images", "Sans publicité", "Tes propres photos"]], "vip_aylik": ["Numbra+ Mensuel", "Débloque toutes les images et retire les publicités.", ["3 jours offerts", "Toutes les images", "Sans publicité", "Tes propres photos"]], "reklamsiz": ["Sans publicité", "Les publicités disparaissent définitivement.", ["Pour toujours", "Images verrouillées non incluses"]], "kendi_resim": ["Tes propres photos", "Transforme n'importe quelle photo en coloriage.", ["Photos illimitées", "Permanent", "Inclus dans Numbra+"]], "paket_buyuk": ["Grand pack", "De quoi tenir longtemps. Meilleur rapport.", ["30 indices", "12 seaux", "6 bombes"]], "paket_orta": ["Pack peinture", "Un pack équilibré pour les passages difficiles.", ["10 indices", "4 seaux", "2 bombes"]], "paket_kucuk": ["Petit pack", "Pour essayer.", ["3 indices", "1 seau", "1 bombe"]], "kilit_tek": ["Débloquer cette image", "Débloque uniquement l'image choisie, pour toujours.", ["Une image", "Permanent"]]},rozet:[["Premier pas", "Termine ta première image"], ["Collectionneur", "Termine 5 images"], ["Maître peintre", "Termine 20 images"], ["Légende", "Termine 50 images"], ["Échauffement", "Peins 100 zones"], ["Main sûre", "Peins 500 zones"], ["Jamais fatigué", "Peins 5000 zones"], ["Poignet d'acier", "Peins 20000 zones"], ["Habitude", "Reviens 3 jours de suite"], ["Hebdomadaire", "Reviens 7 jours de suite"], ["Un mois entier", "Reviens 30 jours de suite"], ["Chasseur de couleurs", "Termine 50 couleurs"], ["Maître de la palette", "Termine 300 couleurs"], ["Ampoule", "Utilise 25 indices"], ["Fan du seau", "Utilise 25 seaux"], ["Expert en explosifs", "Fais exploser 15 bombes"], ["Oiseau de nuit", "Peins entre minuit et 5h"], ["Insomniaque", "Peins pendant 20 nuits"], ["Si fier", "Partage une de tes images"], ["Perfectionniste", "Annule 20 fois"]],tanit:[["Peinture par numéros", "Chaque zone a un numéro. Choisis la couleur en bas et touche la zone."], ["Ne te perds jamais", "La loupe t'emmène à ce qu'il reste. En cas d'erreur, elle indique la bonne couleur."], ["Aides", "En peignant tu gagnes indices, seaux et bombes. Un cadeau t'attend chaque jour."]]},
+ ru:{urun:{"vip_yillik": ["Numbra+ на год", "На 58% дешевле, чем помесячно.", ["3 дня бесплатно", "Все картинки", "Без рекламы", "Свои фото"]], "vip_aylik": ["Numbra+ на месяц", "Открывает все картинки и убирает рекламу.", ["3 дня бесплатно", "Все картинки", "Без рекламы", "Свои фото"]], "reklamsiz": ["Без рекламы", "Реклама исчезает навсегда, больше платить не нужно.", ["Навсегда", "Без закрытых картинок"]], "kendi_resim": ["Свои фото", "Преврати любое фото в раскраску, без ограничений.", ["Без ограничений", "Навсегда", "Входит в Numbra+"]], "paket_buyuk": ["Большой набор", "Хватит надолго. Самая выгодная цена.", ["30 подсказок", "12 вёдер", "6 бомб"]], "paket_orta": ["Набор красок", "Сбалансированный набор для трудных мест.", ["10 подсказок", "4 ведра", "2 бомбы"]], "paket_kucuk": ["Малый набор", "Чтобы попробовать.", ["3 подсказки", "1 ведро", "1 бомба"]], "kilit_tek": ["Открыть эту картинку", "Открывает только выбранную картинку, навсегда.", ["Одна картинка", "Навсегда"]]},rozet:[["Первый шаг", "Заверши первую картинку"], ["Коллекционер", "Заверши 5 картинок"], ["Мастер", "Заверши 20 картинок"], ["Легенда", "Заверши 50 картинок"], ["Разминка", "Закрась 100 областей"], ["Твёрдая рука", "Закрась 500 областей"], ["Неутомимый", "Закрась 5000 областей"], ["Железное запястье", "Закрась 20000 областей"], ["Привычка", "Заходи 3 дня подряд"], ["Неделя", "Заходи 7 дней подряд"], ["Целый месяц", "Заходи 30 дней подряд"], ["Охотник за цветом", "Заверши 50 цветов"], ["Мастер палитры", "Заверши 300 цветов"], ["Озарение", "Используй 25 подсказок"], ["Любитель ведра", "Используй 25 вёдер"], ["Подрывник", "Взорви 15 бомб"], ["Сова", "Рисуй с 00 до 05"], ["Без сна", "Рисуй 20 ночей"], ["Горжусь", "Поделись картинкой"], ["Перфекционист", "Отмени 20 раз"]],tanit:[["Раскраска по номерам", "У каждой области есть номер. Выбери цвет внизу и коснись области."], ["Не потеряешься", "Лупа приведёт к оставшимся местам. При ошибке подскажет нужный цвет."], ["Помощники", "За раскрашивание получаешь подсказки, вёдра и бомбы. Каждый день ждёт подарок."]]}
 };
 function m(){return METIN[DIL]||METIN.en;}
 function urunAd(s){const u=m().urun[s]||METIN.en.urun[s];return u?u[0]:s;}
