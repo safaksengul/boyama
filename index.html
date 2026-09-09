@@ -466,7 +466,9 @@
   .kad{flex:1 1 auto;min-width:0;font-size:15px;font-weight:700;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .ksay{flex:0 0 auto;font-size:12px;font-weight:800;color:var(--muted)}
-  #son{display:flex;gap:11px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+  #son{display:flex;gap:11px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;
+    scrollbar-width:none;touch-action:pan-x pan-y;overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch}
   #son::-webkit-scrollbar{display:none}
   .sonk{position:relative;flex:0 0 auto;width:92px;height:120px;padding:0;border:0;cursor:pointer;
     border-radius:15px;overflow:hidden;background:#fff;box-shadow:var(--golge)}
