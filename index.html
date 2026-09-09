@@ -2240,7 +2240,7 @@ async function build(){
 
 let bittiSayildi=false;
 async function buildFinish(){
-  izgara=null;gecmis=[];bittiSayildi=false;
+  izgara=null;gecmis=[];bittiSayildi=false;takildi=0;
   $("#btnUndo").hidden=false;$("#btnBul").hidden=false;
   texCv=document.createElement("canvas");texCv.width=W;texCv.height=H;
   texCtx=texCv.getContext("2d");texCtx.clearRect(0,0,W,H);
@@ -3269,14 +3269,18 @@ function blastAt(px,py){
 let fx=[],fxOn=false,shake=0;
 /* bir süre hiç bölge boyanmazsa kalanları göster */
 let pulseOn=false,idleT=null,pulseSeen=false;
-const IDLE_MS=9000;
+/* ilk takılmada bekleme uzun, sonrakilerde kısa:
+   kullanıcı kendi arasın, gerçekten zorlanıyorsa yardım daha çabuk gelsin */
+const IDLE_ILK=11000, IDLE_SONRA=7000;
+let takildi=0;
 function kick(){
   pulseOn=false;clearTimeout(idleT);
   idleT=setTimeout(()=>{
     if(!colorGroups[active]||!colorGroups[active].some(r=>!r.filled))return;
+    takildi++;
     pulseOn=true;startFx();
     toast("Bu renkten kalanlar işaretlendi");
-  },IDLE_MS);
+  },takildi?IDLE_SONRA:IDLE_ILK);
 }
 function startFx(){if(fxOn)return;fxOn=true;requestAnimationFrame(fxLoop);}
 function fxLoop(){
