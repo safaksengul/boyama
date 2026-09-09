@@ -324,7 +324,7 @@
     animation:tshine 3.2s ease-in-out infinite}
   @keyframes tshift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
   @keyframes tshine{0%{left:-60%}45%,100%{left:130%}}
-  .card img.thumb{background:#fff}
+  .card img.thumb{background:#fff;image-rendering:auto}
   @media (max-width:619px){
     .card{border-radius:18px}
     .card .more{width:28px;height:28px;font-size:15px;left:6px;top:6px}
@@ -4088,9 +4088,9 @@ async function kapakKaydet(){
   if(!curId||!regions.length||!img)return;
   if(doneTasks<=0)return;
   try{
-    const S=Math.min(1,300/Math.max(W,H));
+    const S=Math.min(1.4,760/Math.max(W,H));
     const cv=boyaliCanvas(S);
-    await store.set("kap:"+curId,cv.toDataURL("image/jpeg",.72));
+    await store.set("kap:"+curId,cv.toDataURL("image/jpeg",.88));
   }catch(e){}
 }
 function saveImage(){
