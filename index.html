@@ -1153,6 +1153,7 @@ async function allItems(){
     o.cat=(remote.kmap&&remote.kmap[o.id])||o.base;
     o.hid=hiddenIds.indexOf(o.id)>=0;
     o.fresh=!!o.e&&(Date.now()-o.e)<NEW_DAYS*864e5;
+    o.kapak=(o.pct>0)?(await store.get("kap:"+o.id))||"":"";
   }
   return out.filter(o=>remote.kaldir.indexOf(o.id)<0);
 }
@@ -1242,7 +1243,7 @@ async function renderGallery(){
     yarim.forEach(it=>{
       const b=document.createElement("button");
       b.className="sonk";
-      b.innerHTML='<img src="'+(it.prev||it.d)+'" alt="">'+
+      b.innerHTML='<img src="'+(it.kapak||it.prev||it.d)+'" alt="">'+
         '<i class="sfill" style="height:'+it.pct+'%"></i><b>%'+it.pct+'</b>';
       b.onclick=()=>loadSrc(it.d,it.id,it.prev||"",it.t);
       sd.appendChild(b);
@@ -1285,9 +1286,10 @@ async function renderGallery(){
     if(kilitli)extra+='<i class="lockv"></i><i class="lock">🔒 Numbra+</i>';
     if(it.pct>0&&it.pct<100)
       extra+='<i class="fillmask" style="height:'+it.pct+'%"></i><i class="badge">%'+it.pct+'</i>';
-    b.innerHTML='<img class="thumb" src="'+(it.prev||it.d)+'" alt="'+it.t+'" style="object-position:'+(it.p||"50% 25%")+'">'+extra;
+    b.innerHTML='<img class="thumb" src="'+(it.kapak||it.prev||it.d)+'" alt="'+it.t+'" style="object-position:'+(it.p||"50% 25%")+'">'+extra;
     const imel=b.querySelector("img");
-    if(it.prev){
+    if(it.kapak){/* boyalı hâl: dönüştürme yok */}
+    else if(it.prev){
       let tries=0;
       imel.onerror=()=>{
         tries++;
@@ -2493,13 +2495,14 @@ async function toggleHide(id){
 async function redo(id,name){
   if(!confirm('"'+name+'" sıfırlansın mı? Boyadıkların silinir.'))return;
   await store.del("pbn:"+id);
+  await store.del("kap:"+id);
   renderGallery();
 }
 async function delMine(id,name){
   if(!confirm('"'+name+'" silinsin mi? Boyadıkların da silinir.'))return;
   const list=(await myList()).filter(x=>x.id!==id);
   await store.set("myimgs",list);
-  await store.del("img:"+id);await store.del("pbn:"+id);
+  await store.del("img:"+id);await store.del("pbn:"+id);await store.del("kap:"+id);
   renderGallery();
 }
 buildGallery();
@@ -2545,7 +2548,13 @@ $("#btnRozet").onclick=()=>openRozet();
 $("#btnHesap").onclick=()=>openHesap();
 $("#shopIc").innerHTML=SVG.sepet;
 $("#btnShop").onclick=()=>openShop(null);
-$("#btnNew").onclick=()=>{teklifDurdur();$("#btnUndo").hidden=true;$("#btnBul").hidden=true;buildGallery();$("#setup").style.display="";};
+$("#btnNew").onclick=async()=>{
+  teklifDurdur();
+  $("#btnUndo").hidden=true;$("#btnBul").hidden=true;
+  await kapakKaydet();
+  buildGallery();
+  $("#setup").style.display="";
+};
 $("#file").onchange=async e=>{
   const f=e.target.files[0];e.target.value="";
   if(!f)return;
@@ -3505,6 +3514,7 @@ function finish(){
   if(doneTasks>=totalTasks){
     saveState(true);confetti();
     if(!bittiSayildi){bittiSayildi=true;say("bitti");}
+    kapakKaydet();
     setTimeout(()=>{doneDoldur();$("#done").classList.add("on");},900);
     puanSor();
     return;
@@ -3988,7 +3998,7 @@ $("#btnReset").onclick=()=>{
   for(const r of regions)r.filled=false;
   doneTasks=0;manual=0;updateTools();
   redrawSnapshot();rebuildTexture();buildPalette();updateProgress();selectColor(0);
-  store.del("pbn:"+curId);
+  store.del("pbn:"+curId);store.del("kap:"+curId);
 };
 $("#btnFillAll").hidden=true;
 $("#godbar").onclick=e=>{
@@ -4071,8 +4081,18 @@ $("#btnAgain").onclick=()=>{
   for(const r of regions)r.filled=false;
   doneTasks=0;manual=0;gecmis=[];bittiSayildi=false;aracKullanim=0;
   redrawSnapshot();rebuildTexture();buildPalette();updateProgress();selectColor(0);render();
-  store.del("pbn:"+curId);
+  store.del("pbn:"+curId);store.del("kap:"+curId);
 };
+/* galeri kartı için boyalı hâlin küçük kopyası */
+async function kapakKaydet(){
+  if(!curId||!regions.length||!img)return;
+  if(doneTasks<=0)return;
+  try{
+    const S=Math.min(1,300/Math.max(W,H));
+    const cv=boyaliCanvas(S);
+    await store.set("kap:"+curId,cv.toDataURL("image/jpeg",.72));
+  }catch(e){}
+}
 function saveImage(){
   const S=clamp(Math.round(3200/Math.max(W,H)),2,6);
   const out=document.createElement("canvas");
