@@ -2937,8 +2937,12 @@ function fillOne(r,kayit){
   return true;
 }
 function undoOne(){
-  const r=gecmis.pop();
-  if(!r||!r.filled){toast("Geri alınacak bir şey yok");return;}
+  let r=null;
+  while(gecmis.length){
+    const c=gecmis.pop();
+    if(c&&c.filled){r=c;break;}
+  }
+  if(!r){toast("Geri alınacak bir şey yok");return;}
   r.filled=false;doneTasks=Math.max(0,doneTasks-1);
   patchSnapshot([r]);
   rebuildTexture();
