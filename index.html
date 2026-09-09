@@ -172,6 +172,27 @@
     background:var(--ink-2);border:1px solid var(--line);color:var(--text);
     border-radius:99px;padding:11px 16px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
   #btnHesap:active{transform:scale(.96)}
+  .basari{position:fixed;left:50%;top:calc(14px + var(--safe-t));z-index:74;
+    display:flex;align-items:center;gap:12px;padding:12px 18px 12px 12px;
+    min-width:250px;max-width:min(360px,92vw);
+    background:linear-gradient(140deg,rgba(247,201,72,.22),rgba(20,21,30,.97) 55%),rgba(20,21,30,.97);
+    border:1px solid rgba(247,201,72,.55);border-radius:18px;
+    box-shadow:0 16px 38px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.05) inset;
+    transform:translate(-50%,-140%) scale(.85);opacity:0;
+    transition:transform .5s cubic-bezier(.2,1.5,.4,1),opacity .35s}
+  .basari.on{transform:translate(-50%,0) scale(1);opacity:1}
+  .basari.cik{transform:translate(-50%,-140%) scale(.9);opacity:0;
+    transition:transform .45s cubic-bezier(.5,0,.75,0),opacity .4s}
+  .basari .bik{flex:0 0 auto;width:48px;height:48px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:24px;
+    background:linear-gradient(135deg,#ffd766,#e08a10);
+    animation:bpop .6s cubic-bezier(.34,1.6,.55,1) .15s both}
+  @keyframes bpop{0%{transform:scale(.4) rotate(-25deg)}60%{transform:scale(1.2) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
+  .basari .bgv{min-width:0}
+  .basari .bgv i{display:block;font-style:normal;font-size:9px;font-weight:900;
+    letter-spacing:.14em;color:#f7c948;margin-bottom:2px}
+  .basari .bgv b{display:block;font-size:16px;font-weight:800;line-height:1.2}
+  .basari .bgv em{display:block;font-style:normal;font-size:11.5px;color:var(--muted);margin-top:2px}
   #tanit{position:fixed;inset:0;z-index:72;display:flex;align-items:center;justify-content:center;
     padding:22px;background:rgba(8,9,14,.88);backdrop-filter:blur(6px);opacity:0;transition:.25s}
   #tanit.on{opacity:1}
@@ -674,7 +695,7 @@ const SHOP=[
    aciklama:"Telefonundaki istediğin fotoğrafı boyamaya dönüştür, sınırsız.",
    ozellik:["Sınırsız resim","Kalıcı","VIP'e dahil"],
    ver:{kendi:true}},
-  {sku:"paket_buyuk", ad:"Büyük Paket", fiyat:"9,99 $", ikon:"kutu",
+  {sku:"paket_buyuk", ad:"Büyük Paket", fiyat:"9,99 $", ikon:"sandik",
    rozet:"EN AVANTAJLI", aciklama:"Uzun süre yetecek kadar. Adedi en ucuz burada.",
    ozellik:["30 ipucu","12 kova","6 dinamit"],
    ver:{bulb:30,bucket:12,bomb:6}},
@@ -682,7 +703,7 @@ const SHOP=[
    aciklama:"Takıldığın yerleri aşmak için dengeli bir paket.",
    ozellik:["10 ipucu","4 kova","2 dinamit"],
    ver:{bulb:10,bucket:4,bomb:2}},
-  {sku:"paket_kucuk", ad:"Küçük Paket", fiyat:"1,99 $", ikon:"kutu",
+  {sku:"paket_kucuk", ad:"Küçük Paket", fiyat:"1,99 $", ikon:"kese",
    aciklama:"Denemek isteyenler için.",
    ozellik:["3 ipucu","1 kova","1 dinamit"],
    ver:{bulb:3,bucket:1,bomb:1}},
@@ -804,6 +825,8 @@ const SVG={
  kalkan:'<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2.5 4 5.6v6.1c0 5 3.4 8.9 8 9.8 4.6-.9 8-4.8 8-9.8V5.6Z" fill="currentColor" opacity=".92"/><path d="M8.4 12.2l2.5 2.5 4.7-5" fill="none" stroke="#12131a" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>',
  kutu:'<svg viewBox="0 0 24 24" width="22" height="22"><path d="M3.2 7.6 12 3.4l8.8 4.2-8.8 4.2Z" fill="currentColor" opacity=".8"/><path d="M3.2 7.9v8.3L12 20.6v-8.4Z" fill="currentColor"/><path d="M20.8 7.9v8.3L12 20.6v-8.4Z" fill="currentColor" opacity=".6"/></svg>',
  foto:'<svg viewBox="0 0 24 24" width="22" height="22"><rect x="2.6" y="5.4" width="18.8" height="14.2" rx="3" fill="currentColor"/><circle cx="12" cy="12.5" r="3.6" fill="#12131a"/><rect x="8.4" y="3.4" width="7.2" height="3" rx="1.5" fill="currentColor"/></svg>',
+ kese:'<svg viewBox="0 0 24 24" width="22" height="22"><path d="M9.2 2.6h5.6l-1 2.6H10.2Z" fill="currentColor" opacity=".7"/><path d="M12 5.2c4 0 7.2 3.6 7.2 7.9S16.4 21.4 12 21.4 4.8 17.4 4.8 13.1 8 5.2 12 5.2Z" fill="currentColor"/><path d="M9.4 12.4h5.2M12 9.8v5.2" stroke="#12131a" stroke-width="1.8" stroke-linecap="round"/></svg>',
+ sandik:'<svg viewBox="0 0 24 24" width="22" height="22"><path d="M2.6 9.4c0-3 2.2-5.2 5-5.2h8.8c2.8 0 5 2.2 5 5.2v1.2H2.6Z" fill="currentColor" opacity=".75"/><rect x="2.6" y="11.4" width="18.8" height="8.4" rx="1.8" fill="currentColor"/><rect x="10.2" y="8.6" width="3.6" height="6.2" rx="1.1" fill="#12131a"/><path d="M2.6 15.1h18.8" stroke="#12131a" stroke-width="1.3" opacity=".55"/></svg>',
  kilit:'<svg viewBox="0 0 24 24" width="22" height="22"><rect x="4.6" y="10.4" width="14.8" height="10.6" rx="2.6" fill="currentColor"/><path d="M8.2 10.2V8a3.8 3.8 0 0 1 7.6 0v2.2" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><circle cx="12" cy="15.4" r="1.7" fill="#12131a"/></svg>'
 };
 
@@ -1822,16 +1845,34 @@ async function tanitimGoster(){
 
 /* ---------- rozetler ---------- */
 const ROZET=[
- {id:"ilk",   ad:"İlk adım",        ac:"İlk resmini bitir",              alan:"bitti", n:1,  ik:"🎨"},
- {id:"bes",   ad:"Koleksiyoncu",    ac:"5 resim bitir",                  alan:"bitti", n:5,  ik:"🖼️"},
- {id:"yirmi", ad:"Usta boyacı",     ac:"20 resim bitir",                 alan:"bitti", n:20, ik:"🏆"},
- {id:"b500",  ad:"Sabırlı el",      ac:"500 bölge boya",                 alan:"bolge", n:500, ik:"✋"},
- {id:"b5000", ad:"Bitmeyen hevesi", ac:"5000 bölge boya",                alan:"bolge", n:5000,ik:"💪"},
- {id:"seri3", ad:"Alışkanlık",      ac:"3 gün üst üste gel",             alan:"enSeri",n:3,  ik:"🔥"},
- {id:"seri7", ad:"Haftalık",        ac:"7 gün üst üste gel",             alan:"enSeri",n:7,  ik:"📅"},
- {id:"seri30",ad:"Bir ay boyunca",  ac:"30 gün üst üste gel",            alan:"enSeri",n:30, ik:"🌟"}
+ {id:"ilk",    ad:"İlk adım",        ac:"İlk resmini bitir",         alan:"bitti", n:1,   ik:"🎨"},
+ {id:"bes",    ad:"Koleksiyoncu",    ac:"5 resim bitir",             alan:"bitti", n:5,   ik:"🖼️"},
+ {id:"yirmi",  ad:"Usta boyacı",     ac:"20 resim bitir",            alan:"bitti", n:20,  ik:"🏆"},
+ {id:"elli",   ad:"Efsane",          ac:"50 resim bitir",            alan:"bitti", n:50,  ik:"👑"},
+ {id:"b100",   ad:"Isınma turu",     ac:"100 bölge boya",            alan:"bolge", n:100, ik:"🖌️"},
+ {id:"b500",   ad:"Sabırlı el",      ac:"500 bölge boya",            alan:"bolge", n:500, ik:"✋"},
+ {id:"b5000",  ad:"Bitmeyen heves",  ac:"5000 bölge boya",           alan:"bolge", n:5000,ik:"💪"},
+ {id:"b20000", ad:"Demir bilek",     ac:"20000 bölge boya",          alan:"bolge", n:20000,ik:"⚒️"},
+ {id:"seri3",  ad:"Alışkanlık",      ac:"3 gün üst üste gel",        alan:"enSeri",n:3,   ik:"🔥"},
+ {id:"seri7",  ad:"Haftalık",        ac:"7 gün üst üste gel",        alan:"enSeri",n:7,   ik:"📅"},
+ {id:"seri30", ad:"Bir ay boyunca",  ac:"30 gün üst üste gel",       alan:"enSeri",n:30,  ik:"🌟"},
+ {id:"renk50", ad:"Renk avcısı",     ac:"50 rengi bitir",            alan:"renk",  n:50,  ik:"🌈"},
+ {id:"renk300",ad:"Palet ustası",    ac:"300 rengi bitir",           alan:"renk",  n:300, ik:"🎭"},
+ {id:"bulb25", ad:"Aydınlanma",      ac:"25 ipucu kullan",           alan:"bulb",  n:25,  ik:"💡"},
+ {id:"buc25",  ad:"Kovacı",          ac:"25 kova kullan",            alan:"bucket",n:25,  ik:"🪈"},
+ {id:"bomb15", ad:"Patlayıcı uzman", ac:"15 dinamit patlat",         alan:"bomb",  n:15,  ik:"🧨"},
+ {id:"gece",   ad:"Gece kuşu",       ac:"Gece 00-05 arası boya",     alan:"gece",  n:1,   ik:"🌙"},
+ {id:"gece20", ad:"Uykusuz",         ac:"20 gece boyama yap",        alan:"gece",  n:20,  ik:"🦉"},
+ {id:"pay1",   ad:"Gurur duydum",    ac:"Bir resmini paylaş",        alan:"paylas",n:1,   ik:"📤"},
+ {id:"geri20", ad:"Mükemmeliyetçi",  ac:"20 kez geri al",            alan:"geri",  n:20,  ik:"↩️"}
 ];
-let istat={bitti:0,bolge:0,enSeri:0};
+let istat={bitti:0,bolge:0,enSeri:0,renk:0,bulb:0,bucket:0,bomb:0,gece:0,paylas:0,geri:0};
+/* sayaç artır ve rozet kontrolü yap */
+function say(alan,adet){
+  const onc=Object.assign({},istat);
+  istat[alan]=(istat[alan]||0)+(adet||1);
+  istatKaydet();rozetKontrol(onc);
+}
 async function istatYukle(){
   const v=await store.get("istat");
   if(v&&typeof v==="object")istat=Object.assign(istat,v);
@@ -1839,15 +1880,30 @@ async function istatYukle(){
 let istatT;
 function istatKaydet(){clearTimeout(istatT);istatT=setTimeout(()=>store.set("istat",istat),500);}
 function rozetKazanildiMi(r){return (istat[r.alan]||0)>=r.n;}
+let rozetKuyruk=[],rozetGosterim=false;
 function rozetKontrol(oncesi){
   for(const r of ROZET){
     const eski=(oncesi[r.alan]||0)>=r.n;
-    if(!eski&&rozetKazanildiMi(r)){
-      setTimeout(()=>sheet(r.ik+"  Rozet kazandın",
-        [{l:r.ad,fn:()=>{}},{l:r.ac,fn:()=>{}}]),700);
-      break;
-    }
+    if(!eski&&rozetKazanildiMi(r))rozetKuyruk.push(r);
   }
+  if(rozetKuyruk.length)rozetSira();
+}
+function rozetSira(){
+  if(rozetGosterim||!rozetKuyruk.length)return;
+  rozetGosterim=true;
+  const r=rozetKuyruk.shift();
+  const w=document.createElement("div");
+  w.className="basari";
+  w.innerHTML='<span class="bik">'+r.ik+'</span>'+
+    '<span class="bgv"><i>ROZET KAZANDIN</i><b>'+r.ad+'</b><em>'+r.ac+'</em></span>';
+  document.body.appendChild(w);
+  if(navigator.vibrate)navigator.vibrate([10,50,18]);
+  requestAnimationFrame(()=>w.classList.add("on"));
+  setTimeout(()=>w.classList.add("cik"),2600);
+  setTimeout(()=>{
+    w.remove();rozetGosterim=false;
+    if(rozetKuyruk.length)setTimeout(rozetSira,250);
+  },3150);
 }
 function openRozet(){
   if(document.getElementById("rozet"))return;
@@ -1889,7 +1945,10 @@ async function gunlukKontrol(){
   seri=g.seri||0;
   if(g.son===bugunKod()){seriYaz();return;}
   seri=(g.son===dunKod())?seri+1:1;
-  if(seri>(istat.enSeri||0)){const onc=Object.assign({},istat);istat.enSeri=seri;istatKaydet();rozetKontrol(onc);}
+  if(seri>(istat.enSeri||0)){
+    const onc=Object.assign({},istat);
+    istat.enSeri=seri;istatKaydet();rozetKontrol(onc);
+  }
   const yedi=seri%7===0;
   const ver=yedi?GUNLUK.yedinciGun:GUNLUK.temel;
   for(const k in ver)items[k]=(items[k]||0)+ver[k];
@@ -2238,9 +2297,9 @@ async function build(){
   return await buildFinish();
 }
 
-let bittiSayildi=false;
+let bittiSayildi=false,geceIsaret=false;
 async function buildFinish(){
-  izgara=null;gecmis=[];bittiSayildi=false;takildi=0;
+  izgara=null;gecmis=[];bittiSayildi=false;takildi=0;geceIsaret=false;
   $("#btnUndo").hidden=false;$("#btnBul").hidden=false;
   texCv=document.createElement("canvas");texCv.width=W;texCv.height=H;
   texCtx=texCv.getContext("2d");texCtx.clearRect(0,0,W,H);
@@ -2943,6 +3002,7 @@ function refreshChips(){
 function retire(i){
   const b=chips[i];if(!b||b.dataset.bye)return;
   b.dataset.bye="1";
+  if((colorGroups[i]||[]).length)say("renk");
   b.classList.add("cheer");
   setTimeout(()=>b.classList.add("bye"),480);
   setTimeout(()=>b.classList.add("gone"),700);
@@ -3022,7 +3082,7 @@ function undoOne(){
   offX=sx;offY=sy;scale=ss;               /* kadraj yerinde kalsın */
   updateProgress();refreshChips();render();saveState(true);
   ctx&&fx.push({t:performance.now(),d:420,x:r.lx,y:r.ly,r:Math.max(14,r.rad*2.4),kind:"ripple"});
-  startFx();
+  startFx();say("geri");
   toast("Geri alındı");
 }
 $("#btnUndo").onclick=undoOne;
@@ -3096,11 +3156,7 @@ function finish(){
   kick();updateProgress();refreshChips();updateTools();render();saveState();
   if(doneTasks>=totalTasks){
     saveState(true);confetti();
-    if(!bittiSayildi){
-      bittiSayildi=true;
-      const onc=Object.assign({},istat);
-      istat.bitti++;istatKaydet();rozetKontrol(onc);
-    }
+    if(!bittiSayildi){bittiSayildi=true;say("bitti");}
     setTimeout(()=>$("#done").classList.add("on"),900);
     puanSor();
     return;
@@ -3114,8 +3170,9 @@ function finish(){
 function fillManual(r){
   if(!fillOne(r))return;
   const prev=manual;manual++;
-  const onc=Object.assign({},istat);
-  istat.bolge++;istatKaydet();rozetKontrol(onc);
+  say("bolge");
+  const sa=new Date().getHours();
+  if(sa<5&&!geceIsaret){geceIsaret=true;say("gece");}
   award(prev);finish();
 }
 function updateProgress(){
@@ -3190,7 +3247,7 @@ $("#tBulb").onclick=()=>{
   if(!r)for(let c=0;c<K;c++){const f=near(colorGroups[c]);if(f){selectColor(c);r=f;break;}}
   if(!r){toast("Boyanacak bölge kalmadı");return;}
   if(!fillOne(r)){toast("Bölge zaten boyalı");return;}
-  items.bulb--;updateTools();
+  items.bulb--;updateTools();say("bulb");
   fx.push({t:performance.now(),d:520,x:r.lx,y:r.ly,r:Math.max(16,r.rad*3),kind:"ripple"});
   startFx();finish();
 };
@@ -3205,7 +3262,7 @@ function bucketColor(c){
   const list=(colorGroups[c]||[]).filter(r=>!r.filled);
   if(!list.length){toast("Bu renk zaten bitti");return;}
   if(items.bucket<=0){outOfItem("bucket");return;}
-  items.bucket--;updateTools();
+  items.bucket--;updateTools();say("bucket");
   if(c!==active)selectColor(c);
   const cx=(-offX+cssW/2)/scale,cy=(-offY+cssH/2)/scale;
   list.sort((a,b)=>Math.hypot(a.lx-cx,a.ly-cy)-Math.hypot(b.lx-cx,b.ly-cy));
@@ -3247,7 +3304,7 @@ function blastAt(px,py){
                 .sort((a,b)=>Math.hypot(a.lx-px,a.ly-py)-Math.hypot(b.lx-px,b.ly-py))
                 .slice(0,90);
   if(!hit.length){toast("Burada boyanacak bölge yok, dinamit harcanmadı");return;}
-  items.bomb--;updateTools();
+  items.bomb--;updateTools();say("bomb");
   const now=performance.now();
   fx.push({t:now,d:820,x:px,y:py,r:R,kind:"blast"});
   for(let i=0;i<26;i++){
@@ -3640,6 +3697,7 @@ $("#btnShare").onclick=async()=>{
       if(navigator.share&&navigator.canShare&&navigator.canShare({files:[f]})){
         await navigator.share({files:[f],title:"Sayılarla Boyama",
           text:"Bu resmi boyadım 🎨"});
+        say("paylas");
       }else{
         saveImage();
         toast("Paylaşım desteklenmiyor, resim kaydedildi");
