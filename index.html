@@ -398,8 +398,10 @@
     cursor:grab;scroll-behavior:smooth}
   #palette.drag{cursor:grabbing;scroll-behavior:auto}
   #palette.drag .chip{pointer-events:none}
-  .chip{width:62px;height:70px}
-  .chip .pot{position:absolute;left:3px;right:3px;top:3px;width:56px;height:56px;bottom:auto;
+  .chip{width:62px;height:64px;--p:0}
+  .chip .ring{position:absolute;left:0;top:0;width:62px;height:62px;border-radius:50%;z-index:0;
+    background:conic-gradient(from -90deg,#7ef0b4 calc(var(--p)*1%),rgba(255,255,255,.13) 0)}
+  .chip .pot{position:absolute;left:3px;right:3px;top:3px;width:56px;height:56px;bottom:auto;z-index:1;
     border-radius:50%;overflow:hidden;background:#1f222c;
     flex-direction:column;gap:0;
     box-shadow:inset 0 -8px 14px rgba(0,0,0,.28),inset 0 0 0 1px rgba(255,255,255,.16),
@@ -413,8 +415,7 @@
     background:rgba(255,255,255,.45)}
   .chip .num{position:relative;z-index:2;font-size:20px;font-weight:800;color:#fff;line-height:1;
     text-shadow:0 1px 3px rgba(0,0,0,.9),0 0 7px rgba(0,0,0,.6)}
-  .chip .pc{position:absolute;left:0;right:0;bottom:-1px;z-index:2;font-size:10px;font-weight:700;
-    color:var(--muted);line-height:1;text-shadow:none}
+  .chip .pc{display:none}
   .chip{transition:width .4s cubic-bezier(.4,0,.2,1),margin .4s cubic-bezier(.4,0,.2,1),
     opacity .3s,transform .35s}
   .chip.bye{transform:scale(.55) translateY(14px);opacity:0;pointer-events:none}
@@ -2643,9 +2644,9 @@ function buildPalette(){
     if(colorGroups[i].every(r=>r.filled)){chips[i]=null;return;}
     const b=document.createElement("button");
     b.className="chip";
-    b.innerHTML='<span class="pot">'+
+    b.innerHTML='<i class="ring"></i><span class="pot">'+
       '<i class="fill" style="background:'+css(c)+'"></i>'+
-      '<span class="num">'+(i+1)+'</span><span class="pc">%100</span></span>';
+      '<span class="num">'+(i+1)+'</span></span><span class="pc"></span>';
     b.onclick=()=>{
       if(armed==="bucket"){setArmed(null);bucketColor(i);return;}
       selectColor(i);
@@ -2664,7 +2665,7 @@ function refreshChips(){
     b.classList.toggle("sel",i===active);
     const left=tot-done, pc=done>=tot?0:Math.max(1,Math.round(left/tot*100));
     b.querySelector(".fill").style.height=pc+"%";
-    b.querySelector(".pc").textContent="%"+pc;
+    b.style.setProperty("--p",100-pc);      /* halka: tamamlanan oran */
     if(done>=tot&&!b.dataset.bye)retire(i);
   }
 }
