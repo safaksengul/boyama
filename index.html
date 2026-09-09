@@ -157,6 +157,35 @@
     font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;line-height:1.5;
     white-space:pre-wrap;word-break:break-word}
   #admin .amut{color:var(--muted);font-size:13px;margin:0 0 8px}
+  #godbar{position:fixed;left:8px;right:8px;top:calc(6px + var(--safe-t));z-index:32;
+    display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 10px;
+    background:rgba(12,13,20,.94);border:1px solid rgba(126,240,180,.45);
+    border-radius:14px;box-shadow:0 8px 22px rgba(0,0,0,.5)}
+  #godbar b{font-size:10px;font-weight:900;letter-spacing:.1em;color:#7ef0b4;margin-right:2px}
+  #godbar button{background:var(--ink-3);border:1px solid var(--line);color:var(--text);
+    border-radius:99px;padding:7px 11px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
+  #godbar button.gx{margin-left:auto;color:#ff8b8b;border-color:rgba(255,120,120,.45)}
+  #btnHesap{flex:0 0 auto;margin-top:4px;display:flex;align-items:center;gap:6px;
+    background:var(--ink-2);border:1px solid var(--line);color:var(--text);
+    border-radius:99px;padding:11px 16px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+  #btnHesap:active{transform:scale(.96)}
+  #hesap{position:fixed;inset:0;z-index:66;display:flex;flex-direction:column;background:var(--ink)}
+  #hesap .abar{display:flex;align-items:center;justify-content:space-between;
+    padding:calc(14px + var(--safe-t)) 16px 14px;border-bottom:1px solid var(--line);font-size:17px}
+  #hesap .ax{background:var(--ink-3);border:1px solid var(--line);color:var(--text);
+    border-radius:99px;padding:8px 16px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+  #hesap .abody{flex:1;overflow-y:auto;padding:16px 16px calc(28px + var(--safe-b))}
+  #hesap h5{margin:18px 0 10px;font-size:13px;font-weight:800;color:var(--accent-2);
+    text-transform:uppercase;letter-spacing:.06em}
+  #hesap .hmut{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.55}
+  #hesap .hdurum{margin:0 0 12px;padding:12px 14px;background:rgba(126,240,180,.1);
+    border:1px solid rgba(126,240,180,.35);border-radius:12px;color:#7ef0b4;font-size:13px}
+  .hbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+    margin:0 0 10px;padding:14px;background:var(--ink-3);border:1px solid var(--line);
+    border-radius:14px;color:var(--text);font-family:inherit;font-size:15px;font-weight:700;cursor:pointer}
+  .hbtn:active{transform:scale(.99)}
+  .hbtn.marka{background:#fff;border-color:#fff;color:#1a1a1a}
+  .hbtn.cik{background:transparent;color:#ff8b8b;border-color:rgba(255,120,120,.4)}
   #toast{position:fixed;left:50%;bottom:calc(112px + var(--safe-b));transform:translateX(-50%) translateY(10px);
     background:var(--ink-3);border:1px solid var(--line);color:var(--text);padding:10px 16px;border-radius:99px;
     font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.2s;z-index:30;white-space:nowrap}
@@ -404,6 +433,14 @@
   <button class="btn round" id="btnSettings" title="Menü">☰</button>
 </header>
 
+<div id="godbar" hidden>
+  <b>YÖNETİCİ</b>
+  <button data-g="bulb">+10 ipucu</button>
+  <button data-g="bucket">+10 kova</button>
+  <button data-g="bomb">+10 dinamit</button>
+  <button data-g="all">Resmi tamamla</button>
+  <button data-g="off" class="gx">Kapat</button>
+</div>
 <div id="stage" hidden>
   <canvas id="view"></canvas>
   <div id="aim">🧨 Patlatmak istediğin yere dokun</div>
@@ -423,6 +460,7 @@
       <h1>Sayılarla <em>Boyama</em></h1>
       <p class="sub">Bir resim seç, sırayla boya, rozetleri topla.</p>
     </div>
+    <button id="btnHesap" title="Hesap">Hesap</button>
     <button id="btnShop" title="Dükkân"><span id="shopIc"></span>Dükkân</button>
   </div>
   <button class="hero" id="hero"></button>
@@ -1015,6 +1053,13 @@ function pinHash(x){
   return h;
 }
 const ADMIN_PIN_HASH=pinHash("5441");
+let godMod=false;
+function setGod(v){
+  godMod=!!v;
+  const g=$("#godbar"),f=$("#btnFillAll");
+  if(g)g.hidden=!godMod;
+  if(f)f.hidden=!godMod;
+}
 let adTaps=0,adTapT,adFail=0,adBlok=0;
 if(YONETICI_ACIK)(function(){
   const h=$("#setup h1");
@@ -1027,7 +1072,7 @@ if(YONETICI_ACIK)(function(){
       if(Date.now()<adBlok){toast("Çok fazla denedin, biraz bekle");return;}
       const p=prompt("Yönetici şifresi:");
       if(p===null)return;
-      if(pinHash(p)===ADMIN_PIN_HASH){adFail=0;openAdmin();}
+      if(pinHash(p)===ADMIN_PIN_HASH){adFail=0;setGod(true);openAdmin();}
       else{
         adFail++;
         if(adFail>=3){adBlok=Date.now()+60000;adFail=0;toast("Bir dakika beklemen gerekiyor");}
@@ -1597,6 +1642,128 @@ function applySketch(el,src){
   if(!sBusy)runSketch();
 }
 
+
+/* ---------- HESAP: ilerleme kaydı ve satın alım yenileme ----------
+   Kabuk uygulama (Firebase Auth + Play Billing) şunları tanımlar:
+     window.Auth  = { signIn(saglayici){return Promise<{ad,eposta}|null>},
+                      signOut(){}, user(){return {ad,eposta}|null} }
+     window.Cloud = { save(veri){return Promise<bool>},
+                      load(){return Promise<veri|null>} }
+   Tanımlı değilse düğmeler "uygulamada çalışır" der, hiçbir şey bozulmaz.   */
+
+const MARKA={
+ google:'<svg viewBox="0 0 24 24" width="18" height="18"><path fill="#4285F4" d="M23 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.2a5.3 5.3 0 0 1-2.3 3.5v2.9h3.7C21.8 18.9 23 15.9 23 12.3z"/><path fill="#34A853" d="M12 23.5c3.1 0 5.7-1 7.6-2.8l-3.7-2.9c-1 .7-2.3 1.1-3.9 1.1-3 0-5.6-2-6.5-4.8H1.7v3A11.5 11.5 0 0 0 12 23.5z"/><path fill="#FBBC05" d="M5.5 14.1a6.9 6.9 0 0 1 0-4.4v-3H1.7a11.5 11.5 0 0 0 0 10.4z"/><path fill="#EA4335" d="M12 5c1.7 0 3.2.6 4.4 1.7l3.3-3.3A11.5 11.5 0 0 0 1.7 6.7l3.8 3a6.9 6.9 0 0 1 6.5-4.7z"/></svg>',
+ facebook:'<svg viewBox="0 0 24 24" width="18" height="18"><path fill="#1877F2" d="M24 12a12 12 0 1 0-13.9 11.9v-8.4H7.1V12h3V9.4c0-3 1.8-4.6 4.5-4.6 1.3 0 2.6.2 2.6.2v2.9h-1.5c-1.5 0-1.9.9-1.9 1.8V12h3.3l-.5 3.5h-2.8v8.4A12 12 0 0 0 24 12z"/></svg>'
+};
+
+/* buluta gidecek veri */
+async function ilerlemeTopla(){
+  const veri={ent:ent,items:items,hidden:hiddenIds,pbn:{},t:Date.now()};
+  const all=await allItems();
+  for(const o of all){
+    const st=await store.get("pbn:"+o.id);
+    if(st)veri.pbn[o.id]=st;
+  }
+  for(const it of await myList()){
+    const st=await store.get("pbn:"+it.id);
+    if(st)veri.pbn[it.id]=st;
+  }
+  return veri;
+}
+async function ilerlemeUygula(v){
+  if(!v||typeof v!=="object")return false;
+  if(v.ent)  {ent=Object.assign(ent,v.ent);await store.set("ent",ent);}
+  if(v.items){items=Object.assign(items,v.items);await store.set("items",items);}
+  if(Array.isArray(v.hidden)){hiddenIds=v.hidden;await store.set("hidden",hiddenIds);}
+  if(v.pbn&&typeof v.pbn==="object")
+    for(const k in v.pbn)await store.set("pbn:"+k,v.pbn[k]);
+  return true;
+}
+
+function openHesap(){
+  if(document.getElementById("hesap"))return;
+  const kullanici=(window.Auth&&window.Auth.user&&window.Auth.user())||null;
+  const w=document.createElement("div");
+  w.id="hesap";
+  w.innerHTML=
+    '<div class="abar"><b>Hesap</b><button class="ax">Kapat</button></div>'+
+    '<div class="abody">'+
+      '<h5>İlerlemeni kaydet</h5>'+
+      (kullanici
+        ? '<p class="hdurum">Giriş yapıldı: <b>'+(kullanici.ad||kullanici.eposta||"hesap")+'</b></p>'+
+          '<button class="hbtn" id="hSave">Şimdi yedekle</button>'+
+          '<button class="hbtn" id="hLoad">Buluttan geri yükle</button>'+
+          '<button class="hbtn cik" id="hOut">Çıkış yap</button>'
+        : '<p class="hmut">Boyadıkların ve rozetlerin hesabına bağlanır. '+
+          'Telefonunu değiştirsen de kaldığın yerden devam edersin.</p>'+
+          '<button class="hbtn marka" id="hGoogle">'+MARKA.google+'Google ile devam et</button>'+
+          '<button class="hbtn marka" id="hFacebook">'+MARKA.facebook+'Facebook ile devam et</button>')+
+      '<h5>Satın alımlar</h5>'+
+      '<p class="hmut">VIP, reklamsız ve açtığın resimler geri gelir. '+
+      'İpucu, kova ve dinamit gibi harcadıkların yenilenmez.</p>'+
+      '<button class="hbtn" id="hRestore">Satın alımları yenile</button>'+
+    '</div>';
+  document.body.appendChild(w);
+  const yok=()=>toast("Bu özellik uygulama sürümünde çalışır");
+
+  const gir=async sag=>{
+    if(!(window.Auth&&window.Auth.signIn))return yok();
+    busy(true,"Giriş yapılıyor…");
+    try{
+      const u=await window.Auth.signIn(sag);
+      busy(false);
+      if(!u){toast("Giriş tamamlanmadı");return;}
+      w.remove();openHesap();
+      toast("Hoş geldin"+(u.ad?", "+u.ad:""));
+      if(window.Cloud&&window.Cloud.load){
+        const v=await window.Cloud.load();
+        if(v&&await ilerlemeUygula(v)){await renderGallery();toast("İlerlemen geri yüklendi");}
+        else if(window.Cloud.save)await window.Cloud.save(await ilerlemeTopla());
+      }
+    }catch(e){busy(false);toast("Giriş yapılamadı");}
+  };
+  const q=id=>w.querySelector(id);
+  if(q("#hGoogle"))q("#hGoogle").onclick=()=>gir("google");
+  if(q("#hFacebook"))q("#hFacebook").onclick=()=>gir("facebook");
+  if(q("#hOut"))q("#hOut").onclick=()=>{
+    if(window.Auth&&window.Auth.signOut)window.Auth.signOut();
+    w.remove();openHesap();toast("Çıkış yapıldı");
+  };
+  if(q("#hSave"))q("#hSave").onclick=async()=>{
+    if(!(window.Cloud&&window.Cloud.save))return yok();
+    busy(true,"Yedekleniyor…");
+    try{await window.Cloud.save(await ilerlemeTopla());busy(false);toast("Yedeklendi");}
+    catch(e){busy(false);toast("Yedeklenemedi");}
+  };
+  if(q("#hLoad"))q("#hLoad").onclick=async()=>{
+    if(!(window.Cloud&&window.Cloud.load))return yok();
+    if(!confirm("Buluttaki kayıt bu cihazdakinin üzerine yazılsın mı?"))return;
+    busy(true,"Geri yükleniyor…");
+    try{
+      const v=await window.Cloud.load();
+      busy(false);
+      if(v&&await ilerlemeUygula(v)){await renderGallery();toast("Geri yüklendi");}
+      else toast("Bulutta kayıt bulunamadı");
+    }catch(e){busy(false);toast("Geri yüklenemedi");}
+  };
+  q("#hRestore").onclick=async()=>{
+    if(!(window.Billing&&window.Billing.restore))return yok();
+    busy(true,"Satın alımlar kontrol ediliyor…");
+    try{
+      const r=await window.Billing.restore();
+      if(r&&typeof r==="object"){
+        ent={vipUntil:Number(r.vipUntil)||0,noads:!!r.noads,
+             acik:Array.isArray(r.acik)?r.acik:[],kendi:!!r.kendi};
+        await store.set("ent",ent);
+        await renderGallery();
+      }
+      busy(false);w.remove();
+      toast(isVip()||ent.noads||ent.kendi?"Satın alımların geri geldi":"Yenilenecek satın alım bulunamadı");
+    }catch(e){busy(false);toast("Kontrol edilemedi");}
+  };
+  w.querySelector(".ax").onclick=()=>w.remove();
+}
+
 /* ---------- seçenek penceresi ---------- */
 function sheet(title,opts,oncancel){
   const w=document.createElement("div");
@@ -1690,6 +1857,7 @@ function loadSrc(src,id,lineSrc){
   im.onerror=()=>{busy(false);toast("Resim indirilemedi, bağlantını kontrol et");};
   im.src=src;
 }
+$("#btnHesap").onclick=()=>openHesap();
 $("#shopIc").innerHTML=SVG.sepet;
 $("#btnShop").onclick=()=>openShop(null);
 $("#btnNew").onclick=()=>{teklifDurdur();buildGallery();$("#setup").style.display="";};
@@ -2460,7 +2628,9 @@ let chips=[];
 function buildPalette(){
   const el=$("#palette");el.innerHTML="";chips=[];
   palette.forEach((c,i)=>{
-    if(colorGroups[i].length&&colorGroups[i].every(r=>r.filled)){chips[i]=null;return;}
+    /* hiç bölgesi olmayan renk şeritte durmasın */
+    if(!colorGroups[i].length){chips[i]=null;return;}
+    if(colorGroups[i].every(r=>r.filled)){chips[i]=null;return;}
     const b=document.createElement("button");
     b.className="chip";
     b.innerHTML='<span class="pot">'+
@@ -2477,7 +2647,9 @@ function buildPalette(){
 function refreshChips(){
   for(let i=0;i<K;i++){
     const b=chips[i];if(!b)continue;
-    const g=colorGroups[i],tot=g.length||1;
+    const g=colorGroups[i];
+    if(!g.length){retire(i);continue;}          /* boş renk: şeritten çıkar */
+    const tot=g.length;
     const done=g.reduce((a,r)=>a+(r.filled?1:0),0);
     b.classList.toggle("sel",i===active);
     const left=tot-done, pc=done>=tot?0:Math.max(1,Math.round(left/tot*100));
@@ -2581,7 +2753,7 @@ function finish(){
   if(doneTasks>=totalTasks){saveState(true);confetti();setTimeout(()=>$("#done").classList.add("on"),900);return;}
   if(!colorGroups[active].some(x=>!x.filled)){
     let n=-1;
-    for(let s=1;s<=K;s++){const c=(active+s)%K;if(colorGroups[c].some(x=>!x.filled)){n=c;break;}}
+    for(let s=1;s<=K;s++){const c=(active+s)%K;if(colorGroups[c].length&&colorGroups[c].some(x=>!x.filled)){n=c;break;}}
     if(n>=0)setTimeout(()=>selectColor(n),260);
   }
 }
@@ -2661,8 +2833,8 @@ $("#tBulb").onclick=()=>{
   let r=near(colorGroups[active]);
   if(!r)for(let c=0;c<K;c++){const f=near(colorGroups[c]);if(f){selectColor(c);r=f;break;}}
   if(!r){toast("Boyanacak bölge kalmadı");return;}
+  if(!fillOne(r)){toast("Bölge zaten boyalı");return;}
   items.bulb--;updateTools();
-  fillOne(r);
   fx.push({t:performance.now(),d:520,x:r.lx,y:r.ly,r:Math.max(16,r.rad*3),kind:"ripple"});
   startFx();finish();
 };
@@ -2682,7 +2854,9 @@ function bucketColor(c){
   const cx=(-offX+cssW/2)/scale,cy=(-offY+cssH/2)/scale;
   list.sort((a,b)=>Math.hypot(a.lx-cx,a.ly-cy)-Math.hypot(b.lx-cx,b.ly-cy));
   let i=0;const per=Math.max(1,Math.ceil(list.length/22));
+  const kovaId=curId;
   const tick=()=>{
+    if(curId!==kovaId)return;
     for(let n=0;n<per&&i<list.length;n++,i++){
       fillOne(list[i]);
       fx.push({t:performance.now(),d:420,x:list[i].lx,y:list[i].ly,r:Math.max(14,list[i].rad*2.5),kind:"ripple"});
@@ -2712,11 +2886,12 @@ $("#tBomb").onclick=()=>{
 function blastAt(px,py){
   const rest=labeled.filter(r=>!r.filled);
   if(!rest.length){toast("Boyanacak bölge kalmadı");return;}
-  items.bomb--;updateTools();
   const R=Math.max(W,H)*.24;
   const hit=rest.filter(r=>Math.hypot(r.lx-px,r.ly-py)<R)
                 .sort((a,b)=>Math.hypot(a.lx-px,a.ly-py)-Math.hypot(b.lx-px,b.ly-py))
                 .slice(0,90);
+  if(!hit.length){toast("Burada boyanacak bölge yok, dinamit harcanmadı");return;}
+  items.bomb--;updateTools();
   const now=performance.now();
   fx.push({t:now,d:820,x:px,y:py,r:R,kind:"blast"});
   for(let i=0;i<26;i++){
@@ -2726,12 +2901,12 @@ function blastAt(px,py){
   }
   startFx();shake=1;
   if(navigator.vibrate)navigator.vibrate([12,40,22]);
-  if(!hit.length)toast("Burada boyanacak bölge yok");
+  const bombId=curId;
   hit.forEach(r=>{
     const dly=100+Math.hypot(r.lx-px,r.ly-py)/R*420;
-    setTimeout(()=>{fillOne(r);render();},dly);
+    setTimeout(()=>{if(curId!==bombId)return;fillOne(r);render();},dly);
   });
-  setTimeout(finish,640);
+  setTimeout(()=>{if(curId===bombId)finish();},640);
 }
 
 /* ================= efektler ================= */
@@ -2812,6 +2987,17 @@ function fitView(){
   if(!isFinite(scale)||scale<=0)scale=1;
   offX=(cssW-W*scale)/2;offY=(cssH-H*scale)/2;render();
 }
+let rafBek=false,etkilesim=false,etkT;
+function requestRender(){
+  if(rafBek)return;
+  rafBek=true;
+  requestAnimationFrame(()=>{rafBek=false;render();});
+}
+function etkilesimBasla(){etkilesim=true;clearTimeout(etkT);}
+function etkilesimBitir(){
+  clearTimeout(etkT);
+  etkT=setTimeout(()=>{etkilesim=false;render();},110);
+}
 function render(){
   if(!snap)return;
   if(!isFinite(scale)||scale<=.02){scale=Math.min(cssW/W,cssH/H)*.96||1;offX=(cssW-W*scale)/2;offY=(cssH-H*scale)/2;}
@@ -2821,7 +3007,7 @@ function render(){
   ctx.save();
   ctx.translate(offX+sh,offY+sv);ctx.scale(scale,scale);
   ctx.save();
-  ctx.shadowColor="rgba(0,0,0,.55)";ctx.shadowBlur=26/scale;ctx.shadowOffsetY=6/scale;
+  if(!etkilesim){ctx.shadowColor="rgba(0,0,0,.55)";ctx.shadowBlur=26/scale;ctx.shadowOffsetY=6/scale;}
   ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);ctx.restore();
   if(scale*dpr<=SNAPS*1.05){
     ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";
@@ -2834,12 +3020,16 @@ function render(){
       drawRegion(ctx,r);
     }
   }
-  if(texCv){
-    ctx.save();
-    ctx.globalAlpha=TEX;ctx.globalCompositeOperation="luminosity";
-    ctx.imageSmoothingQuality="high";
-    ctx.drawImage(texCv,0,0,W,H);
-    ctx.restore();
+  if(texCv&&!etkilesim){
+    const tx0=Math.max(0,Math.floor(-offX/scale)),ty0=Math.max(0,Math.floor(-offY/scale));
+    const tx1=Math.min(W,Math.ceil((-offX+cssW)/scale)),ty1=Math.min(H,Math.ceil((-offY+cssH)/scale));
+    if(tx1>tx0&&ty1>ty0){
+      ctx.save();
+      ctx.globalAlpha=TEX;ctx.globalCompositeOperation="luminosity";
+      ctx.imageSmoothingQuality="high";
+      ctx.drawImage(texCv,tx0,ty0,tx1-tx0,ty1-ty0,tx0,ty0,tx1-tx0,ty1-ty0);
+      ctx.restore();
+    }
   }
   if(pulseOn)drawPulse();
   if(fx.length)drawFx();
@@ -2930,7 +3120,8 @@ stage.addEventListener("pointermove",e=>{
   if(pts.size===1){
     offX+=nx-prev.x;offY+=ny-prev.y;
     moved+=Math.abs(nx-prev.x)+Math.abs(ny-prev.y);
-    pts.set(e.pointerId,{x:nx,y:ny});render();return;
+    pts.set(e.pointerId,{x:nx,y:ny});
+    etkilesimBasla();requestRender();return;
   }
   pts.set(e.pointerId,{x:nx,y:ny});
   if(pts.size===2){
@@ -2939,7 +3130,7 @@ stage.addEventListener("pointermove",e=>{
     const ix=(startMid.x-r.left-offX)/scale,iy=(startMid.y-r.top-offY)/scale;
     scale=clamp(startS*(d/startD),.2,26);
     offX=m.x-r.left-ix*scale;offY=m.y-r.top-iy*scale;
-    moved=999;render();
+    moved=999;etkilesimBasla();requestRender();
   }
 });
 function mid(a){return{x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2};}
@@ -2947,6 +3138,7 @@ stage.addEventListener("pointerup",e=>{
   const was=pts.size;pts.delete(e.pointerId);
   if(was===1&&moved<10&&Date.now()-downT<400&&downPt)tap(downPt.x,downPt.y);
   if(pts.size<2)startD=0;
+  if(!pts.size)etkilesimBitir();
 });
 stage.addEventListener("pointercancel",e=>pts.delete(e.pointerId));
 stage.addEventListener("wheel",e=>{
@@ -2954,7 +3146,8 @@ stage.addEventListener("wheel",e=>{
   const r=stage.getBoundingClientRect();
   const ix=(e.clientX-r.left-offX)/scale,iy=(e.clientY-r.top-offY)/scale;
   scale=clamp(scale*(e.deltaY<0?1.12:1/1.12),.2,26);
-  offX=e.clientX-r.left-ix*scale;offY=e.clientY-r.top-iy*scale;render();
+  offX=e.clientX-r.left-ix*scale;offY=e.clientY-r.top-iy*scale;
+  etkilesimBasla();requestRender();etkilesimBitir();
 },{passive:false});
 function tap(cx,cy){
   const now=Date.now();
@@ -2997,6 +3190,24 @@ $("#btnReset").onclick=()=>{
   doneTasks=0;manual=0;updateTools();
   redrawSnapshot();rebuildTexture();buildPalette();updateProgress();selectColor(0);
   store.del("pbn:"+curId);
+};
+$("#btnFillAll").hidden=true;
+$("#godbar").onclick=e=>{
+  const b=e.target.closest("button");
+  if(!b||!godMod)return;
+  const k=b.dataset.g;
+  if(k==="off"){setGod(false);toast("Yönetici modu kapandı");return;}
+  if(k==="all"){
+    if(!regions.length){toast("Önce bir resim aç");return;}
+    for(const r of regions){if(!r.filled)doneTasks++;r.filled=true;}
+    redrawSnapshot();rebuildTexture();refreshChips();updateProgress();render();
+    saveState(true);toast("Resim tamamlandı");
+    return;
+  }
+  items[k]=(items[k]||0)+10;
+  store.set("items",items);
+  updateTools();
+  toast("+10 "+AD_NAME[k]);
 };
 $("#btnFillAll").onclick=()=>{
   $("#settings").classList.remove("on");
