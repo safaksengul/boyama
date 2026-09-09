@@ -803,7 +803,7 @@ async function buyDo(p,ctxId){
     try{ok=await window.Billing.buy(p.sku);}catch(e){ok=false;}
     busy(false);
   }else if(DENEME_MODU&&!window.Billing){
-    ok=confirm("Deneme modu\n\n“"+p.ad+"” ("+fiyatOf(p)+") satın alınmış sayılsın mı?");
+    ok=confirm("Deneme modu\n\n“"+urunAd(p.sku)+"” ("+fiyatOf(p)+") satın alınmış sayılsın mı?");
   }else{toast("Mağaza şu an kullanılamıyor");return;}
   if(!ok){toast("Satın alma tamamlanmadı");return;}
   const v=p.ver;
@@ -816,7 +816,7 @@ async function buyDo(p,ctxId){
   await store.set("items",items);
   try{updateTools();}catch(e){}
   await renderGallery();
-  toast("Teşekkürler! "+p.ad+" etkin");
+  toast("✓ "+urunAd(p.sku));
 }
 
 const SVG={
@@ -840,10 +840,10 @@ let tkTimer=null,tkEl=null,tkSon=0;
 function teklifSec(){
   const az=(items.bulb+items.bucket+items.bomb)<=2;
   const list=[];
-  if(az)list.push({p:"paket_orta",b:"Takıldın mı?",m:"10 ipucu, 4 kova, 2 dinamit seni kurtarır."});
-  if(!isVip())list.push({p:"vip_yillik",b:"VIP ol, 3 gün ücretsiz",m:"Kilitli resimler açılır, reklamlar kalkar."});
-  if(!adsOff())list.push({p:"reklamsiz",b:"Reklamsız boya",m:"Tek seferlik öde, bir daha reklam görme."});
-  if(!az)list.push({p:"paket_buyuk",b:"Cebin dolu olsun",m:"30 ipucu, 12 kova, 6 dinamit — adedi en ucuz."});
+  if(az)list.push({p:"paket_orta"});
+  if(!isVip())list.push({p:"vip_yillik"});
+  if(!adsOff())list.push({p:"reklamsiz"});
+  if(!az)list.push({p:"paket_buyuk"});
   if(!list.length)return null;
   return list[Math.floor(Math.random()*list.length)];
 }
@@ -871,7 +871,7 @@ function teklifGoster(){
   const w=document.createElement("div");
   w.id="teklif";
   w.innerHTML='<span class="tic">'+(SVG[p.ikon]||SVG.kutu)+'</span>'+
-    '<span class="tgv"><b>'+t.b+'</b><span>'+t.m+'</span></span>'+
+    '<span class="tgv"><b>'+urunAd(p.sku)+'</b><span>'+urunAc(p.sku)+'</span></span>'+
     '<span class="tfi">'+fiyatOf(p)+'</span>'+
     '<button class="tx" title="Kapat">✕</button>'+
     '<span class="tbar"><i></i></span>';
@@ -906,7 +906,7 @@ function openShop(ctxId){
   const vipTxt=isVip()
     ? "VIP üyeliğin "+new Date(ent.vipUntil).toLocaleDateString("tr-TR")+" tarihine kadar geçerli."
     : (ent.noads?"Reklamlar kapalı. Kilitli resimler için VIP gerekiyor.":"");
-  w.innerHTML='<div class="abar"><b>'+SVG.sepet+' Dükkân</b><button class="ax">Kapat</button></div>'+
+  w.innerHTML='<div class="abar"><b>'+SVG.sepet+' '+t("dukkan")+'</b><button class="ax">'+t("kapat")+'</button></div>'+
     '<div class="abody">'+(vipTxt?'<p class="sdurum">'+vipTxt+'</p>':'')+
     '<div id="sList"></div>'+
     '<button class="abtn" id="sRestore">Satın alımlarımı geri yükle</button></div>';
@@ -917,12 +917,13 @@ function openShop(ctxId){
     if(p.ver.noads&&adsOff())return;
     const c=document.createElement("button");
     c.className="scard"+(p.one?" one":"");
-    const oz=(p.ozellik||[]).map(x=>'<em>'+x+'</em>').join("");
+    const ozl=urunOz(p.sku);
+    const oz=(ozl.length?ozl:(p.ozellik||[])).map(x=>'<em>'+x+'</em>').join("");
     const roz=rozetOf(p);
     c.innerHTML=(roz?'<span class="sroz">'+roz+'</span>':'')+
       '<span class="sic">'+(SVG[p.ikon]||SVG.kutu)+'</span>'+
-      '<span class="sgv"><span class="sad">'+p.ad+'</span>'+
-      '<span class="sac">'+p.aciklama+'</span>'+
+      '<span class="sgv"><span class="sad">'+(urunAd(p.sku)||p.ad)+'</span>'+
+      '<span class="sac">'+(urunAc(p.sku)||p.aciklama)+'</span>'+
       (altOf(p)?'<span class="salt">'+altOf(p)+'</span>':'')+
       (oz?'<span class="soz">'+oz+'</span>':'')+'</span>'+
       '<span class="sfi">'+fiyatOf(p)+(ekOf(p)?'<i>'+ekOf(p)+'</i>':'')+'</span>';
@@ -993,7 +994,24 @@ const dayNo=()=>Math.floor((Date.now()-new Date().getTimezoneOffset()*6e4)/864e5
 async function loadPrefs(){
   hiddenIds=(await store.get("hidden"))||[];
 }
+function dilUygula(){
+  const q=(sel,k)=>{const e=$(sel);if(e)e.textContent=t(k);};
+  q(".sub","altbaslik");
+  q("#btnShop","dukkan");
+  q("#btnHesap","hesap");
+  q("#done h2","bitti");
+  q("#done .note","bittiNot");
+  q("#btnSave","kaydet");
+  q("#btnShare","paylas");
+  q("#btnDoneClose","kapat");
+  const mn=$("#mineNote");if(mn)mn.textContent=t("kendiNot");
+  const tg=document.querySelector(".tgec");if(tg)tg.textContent=t("gec");
+  const bs=$("#btnShop");
+  if(bs){bs.innerHTML='<span id="shopIc"></span>'+t("dukkan");$("#shopIc").innerHTML=SVG.sepet;}
+  $("#btnRozet").title=t("rozetler");
+}
 async function buildGallery(){
+  dilUygula();
   await loadEnt();
   await istatYukle();
   await tanitimGoster();
@@ -1043,8 +1061,8 @@ function setHero(list){
   h.hidden=false;
   h.innerHTML='<img src="'+it.d+'" alt="" style="object-position:'+(it.hp||it.p||"50% 28%")+'">'+
     '<span class="veilg"></span>'+
-    '<span class="txt"><span class="tag">GÜNÜN RESMİ</span><h3>'+it.t+'</h3>'+
-    '<span class="go">Boyamaya başla</span></span>';
+    '<span class="txt"><span class="tag">'+t("gunResmi")+'</span><h3>'+it.t+'</h3>'+
+    '<span class="go">'+t("basla")+'</span></span>';
   h.onclick=()=>loadSrc(it.d,it.id,it.prev||"");
 }
 
@@ -1066,12 +1084,12 @@ async function renderGallery(){
   const listed=kats.filter(c=>present.indexOf(c)>=0);
   const rest=present.filter(c=>kats.indexOf(c)<0);
   const cats=(kats.length?listed.concat(rest):rest.concat(listed));
-  const tabs=[{k:"all",l:"Tümü"}];
-  if(fresh.length)tabs.push({k:"new",l:"Yeni"});
+  const tabs=[{k:"all",l:t("tumu")}];
+  if(fresh.length)tabs.push({k:"new",l:t("yeni")});
   cats.forEach(c=>tabs.push({k:c,l:c}));
-  tabs.push({k:"mine",l:"Resmini ekle"});
-  if(fin.length)tabs.push({k:"done",l:"Bitenler "+fin.length});
-  if(hid.length)tabs.push({k:"hid",l:"Gizli "+hid.length});
+  tabs.push({k:"mine",l:t("resminiEkle")});
+  if(fin.length)tabs.push({k:"done",l:t("bitenler")+" "+fin.length});
+  if(hid.length)tabs.push({k:"hid",l:t("gizli")+" "+hid.length});
   if(!tabs.some(t=>t.k===tab))tab="all";
 
   const tb=$("#tabs");tb.innerHTML="";
@@ -1130,7 +1148,7 @@ async function renderGallery(){
     const kalan=Math.max(0,FREE_KENDI-mine.length);
     const acik=kendiSinirsiz()||kalan>0;
     own.className="card own"+(acik?"":" kilitliEk");
-    own.innerHTML=acik?'<b>+</b>Resim ekle':'<b>🔒</b>Sınırsız aç';
+    own.innerHTML=acik?'<b>+</b>'+t("resimEkle"):'<b>🔒</b>'+t("sinirsizAc");
     own.onclick=()=>{
       if(acik)$("#file").click();
       else openShop(null);
@@ -1140,8 +1158,7 @@ async function renderGallery(){
   const em=$("#empty");
   em.hidden=list.length>0;
   em.hidden=list.length>0||tab==="mine";
-  em.textContent=tab==="hid"?"Gizlenmiş resim yok.":
-                 tab==="new"?"Şu an yeni eklenen resim yok.":"Bu bölümde henüz resim yok.";
+  em.textContent=tab==="hid"?t("bosGizli"):tab==="new"?t("bosYeni"):t("bosBolum");
 }
 
 
@@ -1756,6 +1773,164 @@ function applySketch(el,src){
 }
 
 
+
+/* ---------- diller ----------
+   Cihazın diline göre seçilir, karşılığı yoksa İngilizce kullanılır.
+   Yeni dil eklemek için aşağıya kod ve karşılıkları yazman yeterli.   */
+const DILLER={
+ tr:{
+  altbaslik:"Bir resim seç, sırayla boya, rozetleri topla.",
+  tumu:"Tümü", yeni:"Yeni", bitenler:"Bitenler", gizli:"Gizli", resminiEkle:"Resmini ekle",
+  gunResmi:"GÜNÜN RESMİ", basla:"Boyamaya başla", resimEkle:"Resim ekle", sinirsizAc:"Sınırsız aç",
+  dukkan:"Dükkân", hesap:"Hesap", rozetler:"Rozetler", kapat:"Kapat", vazgec:"Vazgeç",
+  bitti:"Resim tamamlandı", kaydet:"Kaydet", paylas:"Paylaş",
+  bittiNot:"Yüksek çözünürlüklü hâlini kaydedebilirsin.",
+  seceneklerbasligi:"Seçenekler", gizle:"Galeriden gizle", gizleKaldir:"Gizlemeyi kaldır",
+  sifirla:"Boyamayı sıfırla", sil:"Resmi sil", buResmiAc:"Bu resmi aç",
+  bosBolum:"Bu bölümde henüz resim yok.", bosGizli:"Gizlenmiş resim yok.",
+  bosYeni:"Şu an yeni eklenen resim yok.",
+  kendiNot:"Buraya eklediğin resimler yalnızca bu cihazda kalır, kimseyle paylaşılmaz.",
+  geriAlindi:"Geri alındı", geriYok:"Geri alınacak bir şey yok",
+  bolgeKalmadi:"Boyanacak bölge kalmadı", rozetKazandin:"ROZET KAZANDIN",
+  ilerlemeBaslik:"İlerlemeni kaydet", satinAlimlar:"Satın alımlar", yardim:"Yardım",
+  googleIle:"Google ile devam et", facebookIle:"Facebook ile devam et",
+  yenile:"Satın alımları yenile", hataBildir:"Hata bildir", oneri:"Öneri gönder",
+  puanVer:"Uygulamaya puan ver", begendinMi:"Uygulamayı beğendin mi?",
+  begendim:"Beğendim", sorunVar:"Sorun var", simdiDegil:"Şimdi değil",
+  gunlukOdul:"Günlük ödül", devam:"Devam", baslayalim:"Başlayalım", gec:"Geç"
+ },
+ en:{
+  altbaslik:"Pick a picture, paint by number, collect badges.",
+  tumu:"All", yeni:"New", bitenler:"Finished", gizli:"Hidden", resminiEkle:"Your photos",
+  gunResmi:"PICTURE OF THE DAY", basla:"Start painting", resimEkle:"Add photo", sinirsizAc:"Unlock",
+  dukkan:"Shop", hesap:"Account", rozetler:"Badges", kapat:"Close", vazgec:"Cancel",
+  bitti:"Picture complete", kaydet:"Save", paylas:"Share",
+  bittiNot:"You can save it in high resolution.",
+  seceneklerbasligi:"Options", gizle:"Hide from gallery", gizleKaldir:"Unhide",
+  sifirla:"Reset painting", sil:"Delete picture", buResmiAc:"Unlock this picture",
+  bosBolum:"No pictures here yet.", bosGizli:"No hidden pictures.",
+  bosYeni:"Nothing new right now.",
+  kendiNot:"Photos you add stay on this device only and are never shared.",
+  geriAlindi:"Undone", geriYok:"Nothing to undo",
+  bolgeKalmadi:"No areas left to paint", rozetKazandin:"BADGE UNLOCKED",
+  ilerlemeBaslik:"Save your progress", satinAlimlar:"Purchases", yardim:"Help",
+  googleIle:"Continue with Google", facebookIle:"Continue with Facebook",
+  yenile:"Restore purchases", hataBildir:"Report a problem", oneri:"Send a suggestion",
+  puanVer:"Rate the app", begendinMi:"Enjoying the app?",
+  begendim:"Love it", sorunVar:"Not really", simdiDegil:"Not now",
+  gunlukOdul:"Daily reward", devam:"Next", baslayalim:"Let's go", gec:"Skip"
+ },
+ es:{
+  altbaslik:"Elige una imagen, pinta por números, gana insignias.",
+  tumu:"Todo", yeni:"Nuevo", bitenler:"Terminadas", gizli:"Ocultas", resminiEkle:"Tus fotos",
+  gunResmi:"IMAGEN DEL DÍA", basla:"Empezar a pintar", resimEkle:"Añadir foto", sinirsizAc:"Desbloquear",
+  dukkan:"Tienda", hesap:"Cuenta", rozetler:"Insignias", kapat:"Cerrar", vazgec:"Cancelar",
+  bitti:"Imagen completada", kaydet:"Guardar", paylas:"Compartir",
+  bittiNot:"Puedes guardarla en alta resolución.",
+  seceneklerbasligi:"Opciones", gizle:"Ocultar de la galería", gizleKaldir:"Mostrar de nuevo",
+  sifirla:"Reiniciar pintura", sil:"Eliminar imagen", buResmiAc:"Desbloquear esta imagen",
+  bosBolum:"Aún no hay imágenes aquí.", bosGizli:"No hay imágenes ocultas.",
+  bosYeni:"Nada nuevo por ahora.",
+  kendiNot:"Las fotos que añadas se quedan solo en este dispositivo.",
+  geriAlindi:"Deshecho", geriYok:"Nada que deshacer",
+  bolgeKalmadi:"No quedan áreas por pintar", rozetKazandin:"INSIGNIA CONSEGUIDA",
+  ilerlemeBaslik:"Guarda tu progreso", satinAlimlar:"Compras", yardim:"Ayuda",
+  googleIle:"Continuar con Google", facebookIle:"Continuar con Facebook",
+  yenile:"Restaurar compras", hataBildir:"Informar de un problema", oneri:"Enviar una sugerencia",
+  puanVer:"Valorar la app", begendinMi:"¿Te gusta la app?",
+  begendim:"Me encanta", sorunVar:"No mucho", simdiDegil:"Ahora no",
+  gunlukOdul:"Recompensa diaria", devam:"Siguiente", baslayalim:"Vamos", gec:"Saltar"
+ },
+ de:{
+  altbaslik:"Bild wählen, nach Zahlen malen, Abzeichen sammeln.",
+  tumu:"Alle", yeni:"Neu", bitenler:"Fertig", gizli:"Ausgeblendet", resminiEkle:"Deine Fotos",
+  gunResmi:"BILD DES TAGES", basla:"Malen starten", resimEkle:"Foto hinzufügen", sinirsizAc:"Freischalten",
+  dukkan:"Shop", hesap:"Konto", rozetler:"Abzeichen", kapat:"Schließen", vazgec:"Abbrechen",
+  bitti:"Bild fertig", kaydet:"Speichern", paylas:"Teilen",
+  bittiNot:"Du kannst es in hoher Auflösung speichern.",
+  seceneklerbasligi:"Optionen", gizle:"Aus Galerie ausblenden", gizleKaldir:"Wieder einblenden",
+  sifirla:"Bild zurücksetzen", sil:"Bild löschen", buResmiAc:"Dieses Bild freischalten",
+  bosBolum:"Hier gibt es noch keine Bilder.", bosGizli:"Keine ausgeblendeten Bilder.",
+  bosYeni:"Gerade nichts Neues.",
+  kendiNot:"Deine Fotos bleiben nur auf diesem Gerät.",
+  geriAlindi:"Rückgängig gemacht", geriYok:"Nichts rückgängig zu machen",
+  bolgeKalmadi:"Keine Flächen mehr übrig", rozetKazandin:"ABZEICHEN ERHALTEN",
+  ilerlemeBaslik:"Fortschritt sichern", satinAlimlar:"Käufe", yardim:"Hilfe",
+  googleIle:"Weiter mit Google", facebookIle:"Weiter mit Facebook",
+  yenile:"Käufe wiederherstellen", hataBildir:"Problem melden", oneri:"Vorschlag senden",
+  puanVer:"App bewerten", begendinMi:"Gefällt dir die App?",
+  begendim:"Sehr gut", sorunVar:"Nicht wirklich", simdiDegil:"Später",
+  gunlukOdul:"Tagesbelohnung", devam:"Weiter", baslayalim:"Los geht's", gec:"Überspringen"
+ },
+ fr:{
+  altbaslik:"Choisis une image, peins par numéros, gagne des badges.",
+  tumu:"Tout", yeni:"Nouveau", bitenler:"Terminées", gizli:"Masquées", resminiEkle:"Tes photos",
+  gunResmi:"IMAGE DU JOUR", basla:"Commencer", resimEkle:"Ajouter une photo", sinirsizAc:"Débloquer",
+  dukkan:"Boutique", hesap:"Compte", rozetler:"Badges", kapat:"Fermer", vazgec:"Annuler",
+  bitti:"Image terminée", kaydet:"Enregistrer", paylas:"Partager",
+  bittiNot:"Tu peux l'enregistrer en haute résolution.",
+  seceneklerbasligi:"Options", gizle:"Masquer de la galerie", gizleKaldir:"Afficher à nouveau",
+  sifirla:"Réinitialiser", sil:"Supprimer l'image", buResmiAc:"Débloquer cette image",
+  bosBolum:"Aucune image ici pour l'instant.", bosGizli:"Aucune image masquée.",
+  bosYeni:"Rien de neuf pour le moment.",
+  kendiNot:"Tes photos restent uniquement sur cet appareil.",
+  geriAlindi:"Annulé", geriYok:"Rien à annuler",
+  bolgeKalmadi:"Plus de zones à peindre", rozetKazandin:"BADGE DÉBLOQUÉ",
+  ilerlemeBaslik:"Sauvegarder ta progression", satinAlimlar:"Achats", yardim:"Aide",
+  googleIle:"Continuer avec Google", facebookIle:"Continuer avec Facebook",
+  yenile:"Restaurer les achats", hataBildir:"Signaler un problème", oneri:"Envoyer une suggestion",
+  puanVer:"Noter l'appli", begendinMi:"Tu aimes l'appli ?",
+  begendim:"J'adore", sorunVar:"Pas vraiment", simdiDegil:"Plus tard",
+  gunlukOdul:"Récompense du jour", devam:"Suivant", baslayalim:"C'est parti", gec:"Passer"
+ },
+ ru:{
+  altbaslik:"Выбери картинку, раскрашивай по номерам, собирай награды.",
+  tumu:"Все", yeni:"Новое", bitenler:"Завершённые", gizli:"Скрытые", resminiEkle:"Твои фото",
+  gunResmi:"КАРТИНКА ДНЯ", basla:"Начать", resimEkle:"Добавить фото", sinirsizAc:"Открыть",
+  dukkan:"Магазин", hesap:"Аккаунт", rozetler:"Награды", kapat:"Закрыть", vazgec:"Отмена",
+  bitti:"Картинка готова", kaydet:"Сохранить", paylas:"Поделиться",
+  bittiNot:"Можно сохранить в высоком разрешении.",
+  seceneklerbasligi:"Настройки", gizle:"Скрыть из галереи", gizleKaldir:"Показать снова",
+  sifirla:"Сбросить раскраску", sil:"Удалить картинку", buResmiAc:"Открыть эту картинку",
+  bosBolum:"Здесь пока нет картинок.", bosGizli:"Нет скрытых картинок.",
+  bosYeni:"Пока ничего нового.",
+  kendiNot:"Добавленные фото остаются только на этом устройстве.",
+  geriAlindi:"Отменено", geriYok:"Нечего отменять",
+  bolgeKalmadi:"Не осталось областей", rozetKazandin:"НАГРАДА ПОЛУЧЕНА",
+  ilerlemeBaslik:"Сохрани прогресс", satinAlimlar:"Покупки", yardim:"Помощь",
+  googleIle:"Войти через Google", facebookIle:"Войти через Facebook",
+  yenile:"Восстановить покупки", hataBildir:"Сообщить о проблеме", oneri:"Отправить предложение",
+  puanVer:"Оценить приложение", begendinMi:"Нравится приложение?",
+  begendim:"Отлично", sorunVar:"Не очень", simdiDegil:"Не сейчас",
+  gunlukOdul:"Ежедневная награда", devam:"Далее", baslayalim:"Поехали", gec:"Пропустить"
+ }
+};
+const DIL=(()=>{
+  try{
+    const k=(navigator.language||"en").slice(0,2).toLowerCase();
+    return DILLER[k]?k:"en";
+  }catch(e){return "en";}
+})();
+const METIN={
+ tr:{urun:{"vip_yillik": ["VIP Yıllık", "Aylık plana göre yılda 56 dolar daha ucuz.", ["İlk 3 gün ücretsiz", "Tüm kilitli resimler", "Reklam yok", "Kendi resimlerin"]], "vip_aylik": ["VIP Aylık", "Bütün kilitli resimler açılır, reklamlar kalkar.", ["İlk 3 gün ücretsiz", "Tüm kilitli resimler", "Reklam yok", "Kendi resimlerin"]], "reklamsiz": ["Reklamsız", "Reklamlar kalıcı olarak kapanır, bir daha ödeme yok.", ["Sonsuza kadar", "Kilitli resimler hariç"]], "kendi_resim": ["Kendi Resimlerin", "Telefonundaki fotoğrafı boyamaya dönüştür, sınırsız.", ["Sınırsız resim", "Kalıcı", "VIP'e dahil"]], "paket_buyuk": ["Büyük Paket", "Uzun süre yetecek kadar. Adedi en ucuz burada.", ["30 ipucu", "12 kova", "6 dinamit"]], "paket_orta": ["Boya Paketi", "Takıldığın yerleri aşmak için dengeli bir paket.", ["10 ipucu", "4 kova", "2 dinamit"]], "paket_kucuk": ["Küçük Paket", "Denemek isteyenler için.", ["3 ipucu", "1 kova", "1 dinamit"]], "kilit_tek": ["Bu resmi aç", "Yalnızca seçtiğin resmi kalıcı olarak açar.", ["Tek resim", "Kalıcı"]]},rozet:[["İlk adım", "İlk resmini bitir"], ["Koleksiyoncu", "5 resim bitir"], ["Usta boyacı", "20 resim bitir"], ["Efsane", "50 resim bitir"], ["Isınma turu", "100 bölge boya"], ["Sabırlı el", "500 bölge boya"], ["Bitmeyen heves", "5000 bölge boya"], ["Demir bilek", "20000 bölge boya"], ["Alışkanlık", "3 gün üst üste gel"], ["Haftalık", "7 gün üst üste gel"], ["Bir ay boyunca", "30 gün üst üste gel"], ["Renk avcısı", "50 rengi bitir"], ["Palet ustası", "300 rengi bitir"], ["Aydınlanma", "25 ipucu kullan"], ["Kovacı", "25 kova kullan"], ["Patlayıcı uzman", "15 dinamit patlat"], ["Gece kuşu", "Gece 00-05 arası boya"], ["Uykusuz", "20 gece boyama yap"], ["Gurur duydum", "Bir resmini paylaş"], ["Mükemmeliyetçi", "20 kez geri al"]],tanit:[["Sayılarla boyama", "Her bölgenin bir numarası var. Alttan o numaralı rengi seç, bölgeye dokun."], ["Kaybolma", "Soldaki büyüteç seni kalan bölgeye götürür. Yanlış yere dokunursan doğru rengi söyler."], ["Yardımcılar", "Boyadıkça ipucu, kova ve dinamit kazanırsın. Her gün gelirsen hediye seni bekler."]]},
+ en:{urun:{"vip_yillik": ["VIP Yearly", "Save 56 dollars a year compared to monthly.", ["3 days free", "All locked pictures", "No ads", "Your own photos"]], "vip_aylik": ["VIP Monthly", "Unlocks every picture and removes all ads.", ["3 days free", "All locked pictures", "No ads", "Your own photos"]], "reklamsiz": ["Ad-free", "Ads are gone for good, no further payment.", ["Forever", "Locked pictures not included"]], "kendi_resim": ["Your Own Photos", "Turn any photo into a painting, unlimited.", ["Unlimited photos", "Permanent", "Included in VIP"]], "paket_buyuk": ["Big Pack", "Enough to last a long while. Best value per item.", ["30 hints", "12 buckets", "6 bombs"]], "paket_orta": ["Paint Pack", "A balanced pack to get past the tricky parts.", ["10 hints", "4 buckets", "2 bombs"]], "paket_kucuk": ["Small Pack", "For a quick try.", ["3 hints", "1 bucket", "1 bomb"]], "kilit_tek": ["Unlock this picture", "Unlocks only the picture you picked, forever.", ["One picture", "Permanent"]]},rozet:[["First step", "Finish your first picture"], ["Collector", "Finish 5 pictures"], ["Master painter", "Finish 20 pictures"], ["Legend", "Finish 50 pictures"], ["Warm-up", "Paint 100 areas"], ["Steady hand", "Paint 500 areas"], ["Never tired", "Paint 5000 areas"], ["Iron wrist", "Paint 20000 areas"], ["Habit", "Come back 3 days in a row"], ["Weekly", "Come back 7 days in a row"], ["A whole month", "Come back 30 days in a row"], ["Colour hunter", "Finish 50 colours"], ["Palette master", "Finish 300 colours"], ["Lightbulb", "Use 25 hints"], ["Bucket fan", "Use 25 buckets"], ["Demolition expert", "Set off 15 bombs"], ["Night owl", "Paint between midnight and 5am"], ["Sleepless", "Paint on 20 nights"], ["So proud", "Share one of your pictures"], ["Perfectionist", "Undo 20 times"]],tanit:[["Paint by number", "Every area has a number. Pick that colour below and tap the area."], ["Never get lost", "The magnifier takes you to what's left. Tap the wrong spot and it tells you the right colour."], ["Helpers", "Painting earns hints, buckets and bombs. Come back daily for a gift."]]},
+ es:{urun:{"vip_yillik": ["VIP Anual", "Ahorra 56 dólares al año frente al plan mensual.", ["3 días gratis", "Todas las imágenes", "Sin anuncios", "Tus propias fotos"]], "vip_aylik": ["VIP Mensual", "Desbloquea todas las imágenes y quita los anuncios.", ["3 días gratis", "Todas las imágenes", "Sin anuncios", "Tus propias fotos"]], "reklamsiz": ["Sin anuncios", "Los anuncios desaparecen para siempre.", ["Para siempre", "Sin imágenes bloqueadas"]], "kendi_resim": ["Tus propias fotos", "Convierte cualquier foto en un dibujo para pintar.", ["Fotos ilimitadas", "Permanente", "Incluido en VIP"]], "paket_buyuk": ["Pack grande", "Para rato. La mejor relación por unidad.", ["30 pistas", "12 cubos", "6 bombas"]], "paket_orta": ["Pack de pintura", "Un pack equilibrado para los momentos difíciles.", ["10 pistas", "4 cubos", "2 bombas"]], "paket_kucuk": ["Pack pequeño", "Para probar.", ["3 pistas", "1 cubo", "1 bomba"]], "kilit_tek": ["Desbloquear esta imagen", "Desbloquea solo la imagen elegida, para siempre.", ["Una imagen", "Permanente"]]},rozet:[["Primer paso", "Termina tu primera imagen"], ["Coleccionista", "Termina 5 imágenes"], ["Maestro pintor", "Termina 20 imágenes"], ["Leyenda", "Termina 50 imágenes"], ["Calentamiento", "Pinta 100 áreas"], ["Pulso firme", "Pinta 500 áreas"], ["Sin cansancio", "Pinta 5000 áreas"], ["Muñeca de hierro", "Pinta 20000 áreas"], ["Hábito", "Vuelve 3 días seguidos"], ["Semanal", "Vuelve 7 días seguidos"], ["Todo un mes", "Vuelve 30 días seguidos"], ["Cazador de colores", "Termina 50 colores"], ["Maestro de la paleta", "Termina 300 colores"], ["Bombilla", "Usa 25 pistas"], ["Fan del cubo", "Usa 25 cubos"], ["Experto en demolición", "Lanza 15 bombas"], ["Ave nocturna", "Pinta entre las 00 y las 05"], ["Insomne", "Pinta 20 noches"], ["Qué orgullo", "Comparte una imagen"], ["Perfeccionista", "Deshaz 20 veces"]],tanit:[["Pintar por números", "Cada área tiene un número. Elige ese color abajo y toca el área."], ["No te pierdas", "La lupa te lleva a lo que falta. Si tocas mal, te dice el color correcto."], ["Ayudas", "Pintando ganas pistas, cubos y bombas. Vuelve cada día por un regalo."]]},
+ de:{urun:{"vip_yillik": ["VIP Jährlich", "56 Dollar günstiger als der Monatsplan.", ["3 Tage gratis", "Alle Bilder frei", "Keine Werbung", "Eigene Fotos"]], "vip_aylik": ["VIP Monatlich", "Schaltet alle Bilder frei und entfernt Werbung.", ["3 Tage gratis", "Alle Bilder frei", "Keine Werbung", "Eigene Fotos"]], "reklamsiz": ["Werbefrei", "Werbung ist dauerhaft weg, keine weiteren Kosten.", ["Für immer", "Ohne gesperrte Bilder"]], "kendi_resim": ["Eigene Fotos", "Mach aus jedem Foto ein Malbild, unbegrenzt.", ["Unbegrenzt", "Dauerhaft", "In VIP enthalten"]], "paket_buyuk": ["Großes Paket", "Reicht lange. Bester Preis pro Stück.", ["30 Tipps", "12 Eimer", "6 Bomben"]], "paket_orta": ["Farbpaket", "Ausgewogen für schwierige Stellen.", ["10 Tipps", "4 Eimer", "2 Bomben"]], "paket_kucuk": ["Kleines Paket", "Zum Ausprobieren.", ["3 Tipps", "1 Eimer", "1 Bombe"]], "kilit_tek": ["Dieses Bild freischalten", "Schaltet nur das gewählte Bild frei, dauerhaft.", ["Ein Bild", "Dauerhaft"]]},rozet:[["Erster Schritt", "Beende dein erstes Bild"], ["Sammler", "Beende 5 Bilder"], ["Meistermaler", "Beende 20 Bilder"], ["Legende", "Beende 50 Bilder"], ["Aufwärmen", "Male 100 Flächen"], ["Ruhige Hand", "Male 500 Flächen"], ["Nie müde", "Male 5000 Flächen"], ["Eisernes Handgelenk", "Male 20000 Flächen"], ["Gewohnheit", "Komm 3 Tage hintereinander"], ["Wöchentlich", "Komm 7 Tage hintereinander"], ["Einen ganzen Monat", "Komm 30 Tage hintereinander"], ["Farbjäger", "Beende 50 Farben"], ["Palettenmeister", "Beende 300 Farben"], ["Geistesblitz", "Nutze 25 Tipps"], ["Eimer-Fan", "Nutze 25 Eimer"], ["Sprengmeister", "Zünde 15 Bomben"], ["Nachteule", "Male zwischen 0 und 5 Uhr"], ["Schlaflos", "Male in 20 Nächten"], ["Stolz", "Teile eines deiner Bilder"], ["Perfektionist", "Mach 20 Mal rückgängig"]],tanit:[["Malen nach Zahlen", "Jede Fläche hat eine Zahl. Wähle unten die Farbe und tippe die Fläche an."], ["Nie verlieren", "Die Lupe bringt dich zum Rest. Tippst du falsch, nennt sie die richtige Farbe."], ["Helfer", "Beim Malen verdienst du Tipps, Eimer und Bomben. Täglich wartet ein Geschenk."]]},
+ fr:{urun:{"vip_yillik": ["VIP Annuel", "56 dollars d'économie par an face au mensuel.", ["3 jours offerts", "Toutes les images", "Sans publicité", "Tes propres photos"]], "vip_aylik": ["VIP Mensuel", "Débloque toutes les images et retire les publicités.", ["3 jours offerts", "Toutes les images", "Sans publicité", "Tes propres photos"]], "reklamsiz": ["Sans publicité", "Les publicités disparaissent définitivement.", ["Pour toujours", "Images verrouillées non incluses"]], "kendi_resim": ["Tes propres photos", "Transforme n'importe quelle photo en coloriage.", ["Photos illimitées", "Permanent", "Inclus dans VIP"]], "paket_buyuk": ["Grand pack", "De quoi tenir longtemps. Meilleur rapport.", ["30 indices", "12 seaux", "6 bombes"]], "paket_orta": ["Pack peinture", "Un pack équilibré pour les passages difficiles.", ["10 indices", "4 seaux", "2 bombes"]], "paket_kucuk": ["Petit pack", "Pour essayer.", ["3 indices", "1 seau", "1 bombe"]], "kilit_tek": ["Débloquer cette image", "Débloque uniquement l'image choisie, pour toujours.", ["Une image", "Permanent"]]},rozet:[["Premier pas", "Termine ta première image"], ["Collectionneur", "Termine 5 images"], ["Maître peintre", "Termine 20 images"], ["Légende", "Termine 50 images"], ["Échauffement", "Peins 100 zones"], ["Main sûre", "Peins 500 zones"], ["Jamais fatigué", "Peins 5000 zones"], ["Poignet d'acier", "Peins 20000 zones"], ["Habitude", "Reviens 3 jours de suite"], ["Hebdomadaire", "Reviens 7 jours de suite"], ["Un mois entier", "Reviens 30 jours de suite"], ["Chasseur de couleurs", "Termine 50 couleurs"], ["Maître de la palette", "Termine 300 couleurs"], ["Ampoule", "Utilise 25 indices"], ["Fan du seau", "Utilise 25 seaux"], ["Expert en explosifs", "Fais exploser 15 bombes"], ["Oiseau de nuit", "Peins entre minuit et 5h"], ["Insomniaque", "Peins pendant 20 nuits"], ["Si fier", "Partage une de tes images"], ["Perfectionniste", "Annule 20 fois"]],tanit:[["Peinture par numéros", "Chaque zone a un numéro. Choisis la couleur en bas et touche la zone."], ["Ne te perds jamais", "La loupe t'emmène à ce qu'il reste. En cas d'erreur, elle indique la bonne couleur."], ["Aides", "En peignant tu gagnes indices, seaux et bombes. Un cadeau t'attend chaque jour."]]},
+ ru:{urun:{"vip_yillik": ["VIP на год", "На 56 долларов дешевле, чем помесячно.", ["3 дня бесплатно", "Все картинки", "Без рекламы", "Свои фото"]], "vip_aylik": ["VIP на месяц", "Открывает все картинки и убирает рекламу.", ["3 дня бесплатно", "Все картинки", "Без рекламы", "Свои фото"]], "reklamsiz": ["Без рекламы", "Реклама исчезает навсегда, больше платить не нужно.", ["Навсегда", "Без закрытых картинок"]], "kendi_resim": ["Свои фото", "Преврати любое фото в раскраску, без ограничений.", ["Без ограничений", "Навсегда", "Входит в VIP"]], "paket_buyuk": ["Большой набор", "Хватит надолго. Самая выгодная цена.", ["30 подсказок", "12 вёдер", "6 бомб"]], "paket_orta": ["Набор красок", "Сбалансированный набор для трудных мест.", ["10 подсказок", "4 ведра", "2 бомбы"]], "paket_kucuk": ["Малый набор", "Чтобы попробовать.", ["3 подсказки", "1 ведро", "1 бомба"]], "kilit_tek": ["Открыть эту картинку", "Открывает только выбранную картинку, навсегда.", ["Одна картинка", "Навсегда"]]},rozet:[["Первый шаг", "Заверши первую картинку"], ["Коллекционер", "Заверши 5 картинок"], ["Мастер", "Заверши 20 картинок"], ["Легенда", "Заверши 50 картинок"], ["Разминка", "Закрась 100 областей"], ["Твёрдая рука", "Закрась 500 областей"], ["Неутомимый", "Закрась 5000 областей"], ["Железное запястье", "Закрась 20000 областей"], ["Привычка", "Заходи 3 дня подряд"], ["Неделя", "Заходи 7 дней подряд"], ["Целый месяц", "Заходи 30 дней подряд"], ["Охотник за цветом", "Заверши 50 цветов"], ["Мастер палитры", "Заверши 300 цветов"], ["Озарение", "Используй 25 подсказок"], ["Любитель ведра", "Используй 25 вёдер"], ["Подрывник", "Взорви 15 бомб"], ["Сова", "Рисуй с 00 до 05"], ["Без сна", "Рисуй 20 ночей"], ["Горжусь", "Поделись картинкой"], ["Перфекционист", "Отмени 20 раз"]],tanit:[["Раскраска по номерам", "У каждой области есть номер. Выбери цвет внизу и коснись области."], ["Не потеряешься", "Лупа приведёт к оставшимся местам. При ошибке подскажет нужный цвет."], ["Помощники", "За раскрашивание получаешь подсказки, вёдра и бомбы. Каждый день ждёт подарок."]]}
+};
+function m(){return METIN[DIL]||METIN.en;}
+function urunAd(s){const u=m().urun[s]||METIN.en.urun[s];return u?u[0]:s;}
+function urunAc(s){const u=m().urun[s]||METIN.en.urun[s];return u?u[1]:"";}
+function urunOz(s){const u=m().urun[s]||METIN.en.urun[s];return u?u[2]:[];}
+function rozetAd(i){const r=m().rozet[i]||METIN.en.rozet[i];return r?r[0]:"";}
+function rozetAc(i){const r=m().rozet[i]||METIN.en.rozet[i];return r?r[1]:"";}
+
+function t(k){
+  const d=DILLER[DIL]||DILLER.en;
+  return (d[k]!==undefined?d[k]:(DILLER.en[k]!==undefined?DILLER.en[k]:k));
+}
+
 /* ---------- geri bildirim ve puanlama ----------
    DESTEK_EPOSTA: hata bildirimlerinin geleceği adres (boşsa panoya kopyalar)
    MAGAZA_URL:    Play sayfan yayına girince buraya yaz                     */
@@ -1790,9 +1965,9 @@ async function puanSor(){
   p.sordu++;p.son=Date.now();
   await store.set("puan",p);
   setTimeout(()=>{
-    sheet("Uygulamayı beğendin mi?",[
-      {l:"👍  Beğendim",fn:()=>begendi()},
-      {l:"👎  Sorun var",fn:()=>{
+    sheet(t("begendinMi"),[
+      {l:"👍  "+t("begendim"),fn:()=>begendi()},
+      {l:"👎  "+t("sorunVar"),fn:()=>{
         sheet("Neyi düzeltelim?",[
           {l:"Hata bildir",fn:()=>hataBildir("Yaşadığım sorun:\n\n")},
           {l:"Şimdi değil",fn:()=>{}}
@@ -1830,12 +2005,12 @@ async function tanitimGoster(){
   document.body.appendChild(w);
   const kapat=async()=>{await store.set("tanitim",1);w.remove();};
   const ciz=()=>{
-    const t=TANIT[i];
-    w.querySelector(".tik").textContent=t.ik;
-    w.querySelector("h3").textContent=t.b;
-    w.querySelector("p").textContent=t.m;
+    const tn=TANIT[i],ce=(m().tanit||[])[i]||METIN.en.tanit[i];
+    w.querySelector(".tik").textContent=tn.ik;
+    w.querySelector("h3").textContent=ce?ce[0]:tn.b;
+    w.querySelector("p").textContent=ce?ce[1]:tn.m;
     w.querySelector(".tnok").innerHTML=TANIT.map((_,k)=>'<i'+(k===i?' class="on"':'')+'></i>').join("");
-    w.querySelector(".tbtn").textContent=i<TANIT.length-1?"Devam":"Başlayalım";
+    w.querySelector(".tbtn").textContent=i<TANIT.length-1?t("devam"):t("baslayalim");
   };
   w.querySelector(".tbtn").onclick=()=>{if(i<TANIT.length-1){i++;ciz();}else kapat();};
   w.querySelector(".tgec").onclick=kapat;
@@ -1895,7 +2070,7 @@ function rozetSira(){
   const w=document.createElement("div");
   w.className="basari";
   w.innerHTML='<span class="bik">'+r.ik+'</span>'+
-    '<span class="bgv"><i>ROZET KAZANDIN</i><b>'+r.ad+'</b><em>'+r.ac+'</em></span>';
+    '<span class="bgv"><i>'+t("rozetKazandin")+'</i><b>'+rozAd(r)+'</b><em>'+rozAc(r)+'</em></span>';
   document.body.appendChild(w);
   if(navigator.vibrate)navigator.vibrate([10,50,18]);
   requestAnimationFrame(()=>w.classList.add("on"));
@@ -1905,6 +2080,8 @@ function rozetSira(){
     if(rozetKuyruk.length)setTimeout(rozetSira,250);
   },3150);
 }
+function rozAd(r){return rozetAd(ROZET.indexOf(r))||r.ad;}
+function rozAc(r){return rozetAc(ROZET.indexOf(r))||r.ac;}
 function openRozet(){
   if(document.getElementById("rozet"))return;
   const w=document.createElement("div");
@@ -1914,11 +2091,11 @@ function openRozet(){
     const su=Math.min(istat[r.alan]||0,r.n);
     return '<div class="rkart'+(ok?" ok":"")+'">'+
       '<span class="rik">'+r.ik+'</span>'+
-      '<span class="rgv"><b>'+r.ad+'</b><i>'+r.ac+'</i>'+
+      '<span class="rgv"><b>'+rozAd(r)+'</b><i>'+rozAc(r)+'</i>'+
       '<span class="rbar"><u style="width:'+Math.round(su/r.n*100)+'%"></u></span>'+
       '<em>'+su+' / '+r.n+'</em></span></div>';
   };
-  w.innerHTML='<div class="abar"><b>Rozetler</b><button class="ax">Kapat</button></div>'+
+  w.innerHTML='<div class="abar"><b>'+t("rozetler")+'</b><button class="ax">'+t("kapat")+'</button></div>'+
     '<div class="abody">'+
     '<div class="ristat"><span><b>'+istat.bitti+'</b>bitirilen resim</span>'+
     '<span><b>'+istat.bolge+'</b>boyanan bölge</span>'+
@@ -2013,9 +2190,9 @@ function openHesap(){
   const w=document.createElement("div");
   w.id="hesap";
   w.innerHTML=
-    '<div class="abar"><b>Hesap</b><button class="ax">Kapat</button></div>'+
+    '<div class="abar"><b>'+t("hesap")+'</b><button class="ax">'+t("kapat")+'</button></div>'+
     '<div class="abody">'+
-      '<h5>İlerlemeni kaydet</h5>'+
+      '<h5>'+t("ilerlemeBaslik")+'</h5>'+
       (kullanici
         ? '<p class="hdurum">Giriş yapıldı: <b>'+(kullanici.ad||kullanici.eposta||"hesap")+'</b></p>'+
           '<button class="hbtn" id="hSave">Şimdi yedekle</button>'+
@@ -2023,18 +2200,18 @@ function openHesap(){
           '<button class="hbtn cik" id="hOut">Çıkış yap</button>'
         : '<p class="hmut">Boyadıkların ve rozetlerin hesabına bağlanır. '+
           'Telefonunu değiştirsen de kaldığın yerden devam edersin.</p>'+
-          '<button class="hbtn marka" id="hGoogle">'+MARKA.google+'Google ile devam et</button>'+
-          '<button class="hbtn marka" id="hFacebook">'+MARKA.facebook+'Facebook ile devam et</button>')+
-      '<h5>Satın alımlar</h5>'+
+          '<button class="hbtn marka" id="hGoogle">'+MARKA.google+t("googleIle")+'</button>'+
+          '<button class="hbtn marka" id="hFacebook">'+MARKA.facebook+t("facebookIle")+'</button>')+
+      '<h5>'+t("satinAlimlar")+'</h5>'+
       '<p class="hmut">VIP, reklamsız ve açtığın resimler geri gelir. '+
       'İpucu, kova ve dinamit gibi harcadıkların yenilenmez.</p>'+
-      '<button class="hbtn" id="hRestore">Satın alımları yenile</button>'+
-      '<h5>Yardım</h5>'+
+      '<button class="hbtn" id="hRestore">'+t("yenile")+'</button>'+
+      '<h5>'+t("yardim")+'</h5>'+
       '<p class="hmut">Bir hata gördüysen ya da bir fikrin varsa yaz. '+
       'Cihaz bilgilerin mesaja kendiliğinden eklenir, sorunu bulmamızı kolaylaştırır.</p>'+
-      '<button class="hbtn" id="hBug">Hata bildir</button>'+
-      '<button class="hbtn" id="hIdea">Öneri gönder</button>'+
-      '<button class="hbtn" id="hRate">Uygulamaya puan ver</button>'+
+      '<button class="hbtn" id="hBug">'+t("hataBildir")+'</button>'+
+      '<button class="hbtn" id="hIdea">'+t("oneri")+'</button>'+
+      '<button class="hbtn" id="hRate">'+t("puanVer")+'</button>'+
     '</div>';
   document.body.appendChild(w);
   const yok=()=>toast("Bu özellik uygulama sürümünde çalışır");
@@ -2117,7 +2294,7 @@ function sheet(title,opts,oncancel){
     box.appendChild(b);
   });
   const c=document.createElement("button");
-  c.className="sopt cancel";c.textContent="Vazgeç";
+  c.className="sopt cancel";c.textContent=t("vazgec");
   c.onclick=()=>{close();setTimeout(()=>{if(!picked&&oncancel)oncancel();},80);};
   box.appendChild(c);
   w.onclick=e=>{if(e.target===w){close();setTimeout(()=>{if(!picked&&oncancel)oncancel();},80);}};
@@ -2126,10 +2303,10 @@ function sheet(title,opts,oncancel){
 }
 function cardMenu(it){
   const o=[];
-  if(it.kilit&&!acikMi(it.id))o.push({l:"Bu resmi aç",fn:()=>openShop(it.id)});
-  o.push({l:it.hid?"Gizlemeyi kaldır":"Galeriden gizle",fn:()=>toggleHide(it.id)});
-  if(it.pct>0)o.push({l:"Boyamayı sıfırla",fn:()=>redo(it.id,it.t)});
-  if(it.own)o.push({l:"Resmi sil",danger:true,fn:()=>delMine(it.id,it.t)});
+  if(it.kilit&&!acikMi(it.id))o.push({l:t("buResmiAc"),fn:()=>openShop(it.id)});
+  o.push({l:it.hid?t("gizleKaldir"):t("gizle"),fn:()=>toggleHide(it.id)});
+  if(it.pct>0)o.push({l:t("sifirla"),fn:()=>redo(it.id,it.t)});
+  if(it.own)o.push({l:t("sil"),danger:true,fn:()=>delMine(it.id,it.t)});
   sheet(it.t,o);
 }
 async function toggleHide(id){
@@ -3067,7 +3244,7 @@ function undoOne(){
     const c=gecmis.pop();
     if(c&&c.filled){r=c;break;}
   }
-  if(!r){toast("Geri alınacak bir şey yok");return;}
+  if(!r){toast(t("geriYok"));return;}
   r.filled=false;doneTasks=Math.max(0,doneTasks-1);
   patchSnapshot([r]);
   rebuildTexture();
@@ -3083,7 +3260,7 @@ function undoOne(){
   updateProgress();refreshChips();render();saveState(true);
   ctx&&fx.push({t:performance.now(),d:420,x:r.lx,y:r.ly,r:Math.max(14,r.rad*2.4),kind:"ripple"});
   startFx();say("geri");
-  toast("Geri alındı");
+  toast(t("geriAlindi"));
 }
 $("#btnUndo").onclick=undoOne;
 $("#btnBul").onclick=()=>{
