@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Sayılarla Boyama</title>
+<title>Numbra</title>
 <style>
   :root{
-    --ink:#12131a;--ink-2:#1c1e28;--ink-3:#282b37;--line:#343846;
-    --text:#eef0f6;--muted:#9aa0b4;--accent:#8b5cf6;--accent-2:#c084fc;--ok:#3ddc97;
+    --ink:#0c0e15;--ink-2:#151824;--ink-3:#1f2432;--line:#2c3243;
+    --text:#eef1f8;--muted:#8d95ab;--accent:#e0a21a;--accent-2:#f7c948;--ok:#3ddc97;
     --safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -20,8 +20,8 @@
   /* ---------- galeri ---------- */
   #setup{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;
     padding:calc(26px + var(--safe-t)) 18px calc(22px + var(--safe-b));
-    background:radial-gradient(130% 70% at 50% 0%,#2b1f4d 0%,transparent 60%),var(--ink);overflow-y:auto}
-  #setup h1{font-size:clamp(26px,7.5vw,38px);font-weight:800;letter-spacing:-.02em;margin:0 0 4px;line-height:1.05}
+    background:radial-gradient(130% 70% at 50% 0%,#2a2113 0%,transparent 62%),var(--ink);overflow-y:auto}
+  #setup h1{display:flex;align-items:center;gap:10px;font-size:clamp(26px,7.5vw,38px);font-weight:800;letter-spacing:-.02em;margin:0 0 4px;line-height:1.05}
   #setup .sub{margin:0 0 22px;color:var(--muted);font-size:14px;line-height:1.5}
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;align-items:start}
   @media (min-width:620px){.grid{grid-template-columns:repeat(4,1fr);gap:12px}}
@@ -434,6 +434,7 @@
   .card.own.kilitliEk{border-color:rgba(247,201,72,.5);background:rgba(247,201,72,.07);color:#f7c948}
   .card.own.kilitliEk b{color:#f7c948;font-size:20px}
   .hero[hidden]{display:none}
+  .mark{display:flex;flex:0 0 auto}
   #mineNote{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.5}
   #empty{color:var(--muted);font-size:14px;text-align:center;padding:40px 10px}
   .card .redo{position:absolute;left:8px;top:8px;width:28px;height:28px;border-radius:50%;
@@ -558,7 +559,17 @@
 <div id="setup">
   <div class="ghead">
     <div>
-      <h1>Sayılarla <em>Boyama</em></h1>
+      <h1><span class="mark"><svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true">
+        <defs><clipPath id="cd"><circle cx="32" cy="32" r="24"/></clipPath></defs>
+        <g clip-path="url(#cd)">
+          <rect x="0" y="0" width="32" height="32" fill="#f7c948"/>
+          <rect x="32" y="0" width="32" height="32" fill="#3ddc97"/>
+          <rect x="0" y="32" width="32" height="32" fill="#e0453c"/>
+          <rect x="32" y="32" width="32" height="32" fill="#4a8cf7"/>
+          <circle cx="55.5" cy="28" r="25" fill="#0c0e15"/>
+        </g>
+        <circle cx="32" cy="32" r="24" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
+      </svg></span>Numbra</h1>
       <p class="sub">Bir resim seç, sırayla boya, rozetleri topla.</p>
       <p id="seri" hidden></p>
     </div>
@@ -1948,7 +1959,7 @@ async function hataBildir(onYazi){
   const govde=(onYazi||"Karşılaştığım sorun:\n\n")+cihazBilgi();
   if(DESTEK_EPOSTA){
     location.href="mailto:"+DESTEK_EPOSTA+
-      "?subject="+encodeURIComponent("Sayılarla Boyama — geri bildirim")+
+      "?subject="+encodeURIComponent("Numbra — geri bildirim")+
       "&body="+encodeURIComponent(govde);
     return;
   }
@@ -3872,7 +3883,7 @@ $("#btnShare").onclick=async()=>{
     const f=new File([b],"boyama.png",{type:"image/png"});
     try{
       if(navigator.share&&navigator.canShare&&navigator.canShare({files:[f]})){
-        await navigator.share({files:[f],title:"Sayılarla Boyama",
+        await navigator.share({files:[f],title:"Numbra",
           text:"Bu resmi boyadım 🎨"});
         say("paylas");
       }else{
