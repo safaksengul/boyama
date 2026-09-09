@@ -23,7 +23,9 @@
     background:radial-gradient(130% 70% at 50% 0%,#2b1f4d 0%,transparent 60%),var(--ink);overflow-y:auto}
   #setup h1{font-size:clamp(26px,7.5vw,38px);font-weight:800;letter-spacing:-.02em;margin:0 0 4px;line-height:1.05}
   #setup .sub{margin:0 0 22px;color:var(--muted);font-size:14px;line-height:1.5}
-  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:start}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;align-items:start}
+  @media (min-width:620px){.grid{grid-template-columns:repeat(4,1fr);gap:12px}}
+  @media (min-width:900px){.grid{grid-template-columns:repeat(5,1fr);gap:14px}}
   .card{position:relative;border:0;padding:0;background:var(--ink-2);border-radius:16px;overflow:hidden;
     cursor:pointer;width:100%;aspect-ratio:9/13;font-family:inherit;
     box-shadow:0 6px 14px rgba(0,0,0,.45)}
@@ -187,6 +189,13 @@
   .hbtn:active{transform:scale(.99)}
   .hbtn.marka{background:#fff;border-color:#fff;color:#1a1a1a}
   .hbtn.cik{background:transparent;color:#ff8b8b;border-color:rgba(255,120,120,.4)}
+  #btnUndo{position:fixed;right:14px;bottom:calc(112px + var(--safe-b));z-index:24;
+    width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:rgba(20,21,30,.92);border:1px solid var(--line);color:var(--text);cursor:pointer;
+    box-shadow:0 6px 16px rgba(0,0,0,.45)}
+  #btnUndo:active{transform:scale(.93)}
+  #btnUndo[hidden]{display:none}
+  #seri{margin:2px 0 0;font-size:13px;font-weight:700;color:#f7c948}
   #toast{position:fixed;left:50%;bottom:calc(112px + var(--safe-b));transform:translateX(-50%) translateY(10px);
     background:var(--ink-3);border:1px solid var(--line);color:var(--text);padding:10px 16px;border-radius:99px;
     font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.2s;z-index:30;white-space:nowrap}
@@ -229,6 +238,12 @@
   @keyframes tshift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
   @keyframes tshine{0%{left:-60%}45%,100%{left:130%}}
   .card img.thumb{background:#fff}
+  @media (max-width:619px){
+    .card{border-radius:18px}
+    .card .more{width:28px;height:28px;font-size:15px;left:6px;top:6px}
+    .card .badge{font-size:10px;padding:4px 8px;right:6px;bottom:6px}
+    .card .ribbon{font-size:10px;padding:3px 26px}
+  }
   .card img.thumb.flat{filter:grayscale(1) contrast(1.35) brightness(1.08)}
   .card .ribbon{position:absolute;left:-20px;top:9px;transform:rotate(-32deg);
     font-style:normal;font-size:9px;font-weight:900;letter-spacing:.08em;color:#fff;
@@ -450,6 +465,11 @@
 <div id="stage" hidden>
   <canvas id="view"></canvas>
   <div id="aim">🧨 Patlatmak istediğin yere dokun</div>
+  <button id="btnUndo" title="Geri al" hidden>
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+      stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 8h11a6 6 0 0 1 0 12H8"/><path d="M7 4 3 8l4 4"/></svg>
+  </button>
   <div id="tools">
     <button class="tool" id="tBomb" title="Dinamit"><span class="orb">🧨</span><span class="cnt">1</span><span class="ring"><b></b></span></button>
     <button class="tool" id="tBucket" title="Kova"><span class="orb"><svg viewBox="0 0 24 24" width="23" height="23" aria-hidden="true"><path d="M6.9 8.2a3.5 3.5 0 0 1 6.9 0" fill="none" stroke="#eaf6ff" stroke-width="1.5" stroke-linecap="round"/><path d="M3.6 8.6h13.6l-1.5 9.5a2.1 2.1 0 0 1-2.1 1.8H7.2a2.1 2.1 0 0 1-2.1-1.8L3.6 8.6Z" fill="#f2f9ff"/><path d="M3.6 8.6h13.6l-.42 2.7c-2.1.95-4.3 1.42-6.38 1.42S6.13 12.25 4.02 11.3L3.6 8.6Z" fill="#1b5fa5"/><path d="M19.4 9.4c1.5 2 2.2 3.3 2.2 4.2a2.2 2.2 0 0 1-4.4 0c0-.9.7-2.2 2.2-4.2Z" fill="#eaf6ff"/></svg></span><span class="cnt">1</span><span class="ring"><b></b></span></button>
@@ -465,6 +485,7 @@
     <div>
       <h1>Sayılarla <em>Boyama</em></h1>
       <p class="sub">Bir resim seç, sırayla boya, rozetleri topla.</p>
+      <p id="seri" hidden></p>
     </div>
     <button id="btnHesap" title="Hesap">Hesap</button>
     <button id="btnShop" title="Dükkân"><span id="shopIc"></span>Dükkân</button>
@@ -497,7 +518,8 @@
     <h2>Resim tamamlandı</h2>
     <p class="note">Yüksek çözünürlüklü hâlini kaydedebilirsin.</p>
     <div class="acts">
-      <button class="btn" id="btnSave">Resmi kaydet</button>
+      <button class="btn" id="btnSave">Kaydet</button>
+      <button class="btn" id="btnShare">Paylaş</button>
       <button class="btn pri" id="btnDoneClose">Kapat</button>
     </div>
   </div>
@@ -895,6 +917,7 @@ async function loadPrefs(){
 }
 async function buildGallery(){
   await loadEnt();
+  gunlukKontrol();
   await fiyatlariCek();
   const it0=await store.get("items");
   if(it0&&typeof it0==="object"){
@@ -1653,6 +1676,44 @@ function applySketch(el,src){
 }
 
 
+/* ---------- günlük ödül ve seri ----------
+   Her gün uygulamayı açana ipucu verir; üst üste günlerde artar.       */
+const GUNLUK={temel:{bulb:2},yedinciGun:{bulb:5,bucket:2,bomb:1}};
+let seri=0;
+const bugunKod=()=>{
+  const d=new Date();
+  return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
+};
+const dunKod=()=>{
+  const d=new Date(Date.now()-864e5);
+  return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
+};
+async function gunlukKontrol(){
+  let g=(await store.get("gunluk"))||{son:"",seri:0};
+  seri=g.seri||0;
+  if(g.son===bugunKod()){seriYaz();return;}
+  seri=(g.son===dunKod())?seri+1:1;
+  const yedi=seri%7===0;
+  const ver=yedi?GUNLUK.yedinciGun:GUNLUK.temel;
+  for(const k in ver)items[k]=(items[k]||0)+ver[k];
+  await store.set("items",items);
+  await store.set("gunluk",{son:bugunKod(),seri:seri});
+  try{updateTools();}catch(e){}
+  seriYaz();
+  const satir=Object.keys(ver).map(k=>"+"+ver[k]+" "+AD_NAME[k]).join(", ");
+  setTimeout(()=>{
+    sheet(yedi?"🎁 "+seri+". gün — büyük ödül!":"🎁 Günlük ödül",
+      [{l:satir,fn:()=>{}},
+       {l:seri>1?seri+" gündür üst üste geliyorsun":"Yarın da gel, ödül büyüsün",fn:()=>{}}]);
+  },600);
+}
+function seriYaz(){
+  const el=$("#seri");
+  if(!el)return;
+  el.textContent=seri>1?"🔥 "+seri+" günlük seri":"";
+  el.hidden=seri<2;
+}
+
 /* ---------- HESAP: ilerleme kaydı ve satın alım yenileme ----------
    Kabuk uygulama (Firebase Auth + Play Billing) şunları tanımlar:
      window.Auth  = { signIn(saglayici){return Promise<{ad,eposta}|null>},
@@ -1870,7 +1931,7 @@ function loadSrc(src,id,lineSrc){
 $("#btnHesap").onclick=()=>openHesap();
 $("#shopIc").innerHTML=SVG.sepet;
 $("#btnShop").onclick=()=>openShop(null);
-$("#btnNew").onclick=()=>{teklifDurdur();buildGallery();$("#setup").style.display="";};
+$("#btnNew").onclick=()=>{teklifDurdur();$("#btnUndo").hidden=true;buildGallery();$("#setup").style.display="";};
 $("#file").onchange=async e=>{
   const f=e.target.files[0];e.target.value="";
   if(!f)return;
@@ -1971,7 +2032,8 @@ async function build(){
 }
 
 async function buildFinish(){
-  izgara=null;
+  izgara=null;gecmis=[];
+  $("#btnUndo").hidden=false;
   texCv=document.createElement("canvas");texCv.width=W;texCv.height=H;
   texCtx=texCv.getContext("2d");texCtx.clearRect(0,0,W,H);
   makeTile();
@@ -2719,10 +2781,27 @@ function selectColor(i){
 })();
 
 /* ================= boyama ================= */
-function fillOne(r){
+let gecmis=[];                 /* son boyamalar, geri almak için */
+function fillOne(r,kayit){
   if(r.filled)return false;
-  r.filled=true;doneTasks++;patchSnapshot([r]);texRegion(r);return true;
+  r.filled=true;doneTasks++;patchSnapshot([r]);texRegion(r);
+  if(kayit!==false){gecmis.push(r);if(gecmis.length>60)gecmis.shift();}
+  return true;
 }
+function undoOne(){
+  const r=gecmis.pop();
+  if(!r||!r.filled){toast("Geri alınacak bir şey yok");return;}
+  r.filled=false;doneTasks=Math.max(0,doneTasks-1);
+  patchSnapshot([r]);
+  rebuildTexture();
+  if(!chips[r.color])buildPalette();      /* rengin kutusu kalkmışsa geri getir */
+  selectColor(r.color);
+  updateProgress();refreshChips();render();saveState(true);
+  ctx&&fx.push({t:performance.now(),d:420,x:r.lx,y:r.ly,r:Math.max(14,r.rad*2.4),kind:"ripple"});
+  startFx();
+  toast("Geri alındı");
+}
+$("#btnUndo").onclick=undoOne;
 /* ödüller SADECE elle boyamadan gelir */
 function award(prevManual){
   const gained=[];
@@ -3251,6 +3330,43 @@ $("#btnFillAll").onclick=()=>{
   saveState(true);
 };
 $("#btnDoneClose").onclick=()=>$("#done").classList.remove("on");
+function boyaliCanvas(S){
+  const out=document.createElement("canvas");
+  out.width=Math.round(W*S);out.height=Math.round(H*S);
+  const oc=out.getContext("2d");
+  oc.setTransform(S,0,0,S,0,0);
+  oc.fillStyle="#fff";oc.fillRect(0,0,W,H);
+  const keep=active;active=-1;
+  for(const r of regions)drawRegion(oc,r);
+  active=keep;
+  const cp=new Path2D();let any=false;
+  for(const r of regions)if(r.filled){cp.addPath(r.path);any=true;}
+  if(any){
+    oc.save();oc.clip(cp,"evenodd");
+    oc.globalAlpha=TEX;oc.globalCompositeOperation="luminosity";
+    oc.imageSmoothingQuality="high";
+    oc.drawImage(img,0,0,W,H);
+    oc.restore();
+  }
+  return out;
+}
+$("#btnShare").onclick=async()=>{
+  const S=clamp(Math.round(2000/Math.max(W,H)),1,4);
+  const cv=boyaliCanvas(S);
+  cv.toBlob(async b=>{
+    if(!b)return toast("Paylaşılamadı");
+    const f=new File([b],"boyama.png",{type:"image/png"});
+    try{
+      if(navigator.share&&navigator.canShare&&navigator.canShare({files:[f]})){
+        await navigator.share({files:[f],title:"Sayılarla Boyama",
+          text:"Bu resmi boyadım 🎨"});
+      }else{
+        saveImage();
+        toast("Paylaşım desteklenmiyor, resim kaydedildi");
+      }
+    }catch(e){/* kullanıcı vazgeçti */}
+  },"image/png");
+};
 function saveImage(){
   const S=clamp(Math.round(3200/Math.max(W,H)),2,6);
   const out=document.createElement("canvas");
