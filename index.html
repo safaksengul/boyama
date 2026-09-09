@@ -1733,6 +1733,62 @@ function applySketch(el,src){
 }
 
 
+/* ---------- geri bildirim ve puanlama ----------
+   DESTEK_EPOSTA: hata bildirimlerinin geleceği adres (boşsa panoya kopyalar)
+   MAGAZA_URL:    Play sayfan yayına girince buraya yaz                     */
+const DESTEK_EPOSTA="safaksengul1985@hotmail.com";   /* yayına çıkmadan gözden geçir */
+const MAGAZA_URL="";
+const PUAN_KURAL={ilk:3,tekrar:10,beklemeGun:45};   /* kaçıncı resimde sorulsun */
+
+function cihazBilgi(){
+  return "\n\n---\nSürüm: "+(document.title||"")+
+    "\nTarayıcı: "+navigator.userAgent+
+    "\nEkran: "+screen.width+"x"+screen.height+
+    "\nBitirilen: "+istat.bitti+" | Bölge: "+istat.bolge;
+}
+async function hataBildir(onYazi){
+  const govde=(onYazi||"Karşılaştığım sorun:\n\n")+cihazBilgi();
+  if(DESTEK_EPOSTA){
+    location.href="mailto:"+DESTEK_EPOSTA+
+      "?subject="+encodeURIComponent("Sayılarla Boyama — geri bildirim")+
+      "&body="+encodeURIComponent(govde);
+    return;
+  }
+  try{await navigator.clipboard.writeText(govde);toast("Bilgiler panoya kopyalandı");}
+  catch(e){alert(govde);}
+}
+async function puanSor(){
+  let p=(await store.get("puan"))||{sordu:0,son:0,verdi:false,asla:false};
+  if(p.verdi||p.asla)return;
+  const gecen=(Date.now()-(p.son||0))/864e5;
+  const uygun=(istat.bitti===PUAN_KURAL.ilk)||
+              (istat.bitti>=PUAN_KURAL.tekrar&&gecen>=PUAN_KURAL.beklemeGun);
+  if(!uygun)return;
+  p.sordu++;p.son=Date.now();
+  await store.set("puan",p);
+  setTimeout(()=>{
+    sheet("Uygulamayı beğendin mi?",[
+      {l:"👍  Beğendim",fn:()=>begendi()},
+      {l:"👎  Sorun var",fn:()=>{
+        sheet("Neyi düzeltelim?",[
+          {l:"Hata bildir",fn:()=>hataBildir("Yaşadığım sorun:\n\n")},
+          {l:"Şimdi değil",fn:()=>{}}
+        ]);
+      }},
+      {l:"Şimdi değil",fn:()=>{}}
+    ]);
+  },1400);
+}
+async function begendi(){
+  const p=(await store.get("puan"))||{};
+  p.verdi=true;await store.set("puan",p);
+  if(window.Review&&window.Review.request){
+    try{await window.Review.request();return;}catch(e){}
+  }
+  if(MAGAZA_URL){window.open(MAGAZA_URL,"_blank");return;}
+  toast("Teşekkürler! Mağaza sayfası yayına girince buradan puan verebileceksin");
+}
+
 /* ---------- ilk açılış tanıtımı ---------- */
 const TANIT=[
  {ik:"🎨",b:"Sayılarla boyama",m:"Her bölgenin bir numarası var. Alttan o numaralı rengi seç, bölgeye dokun, renk yerini bulsun."},
@@ -1914,6 +1970,12 @@ function openHesap(){
       '<p class="hmut">VIP, reklamsız ve açtığın resimler geri gelir. '+
       'İpucu, kova ve dinamit gibi harcadıkların yenilenmez.</p>'+
       '<button class="hbtn" id="hRestore">Satın alımları yenile</button>'+
+      '<h5>Yardım</h5>'+
+      '<p class="hmut">Bir hata gördüysen ya da bir fikrin varsa yaz. '+
+      'Cihaz bilgilerin mesaja kendiliğinden eklenir, sorunu bulmamızı kolaylaştırır.</p>'+
+      '<button class="hbtn" id="hBug">Hata bildir</button>'+
+      '<button class="hbtn" id="hIdea">Öneri gönder</button>'+
+      '<button class="hbtn" id="hRate">Uygulamaya puan ver</button>'+
     '</div>';
   document.body.appendChild(w);
   const yok=()=>toast("Bu özellik uygulama sürümünde çalışır");
@@ -1958,6 +2020,9 @@ function openHesap(){
       else toast("Bulutta kayıt bulunamadı");
     }catch(e){busy(false);toast("Geri yüklenemedi");}
   };
+  q("#hBug").onclick=()=>hataBildir("Yaşadığım sorun:\n\n");
+  q("#hIdea").onclick=()=>hataBildir("Önerim:\n\n");
+  q("#hRate").onclick=()=>begendi();
   q("#hRestore").onclick=async()=>{
     if(!(window.Billing&&window.Billing.restore))return yok();
     busy(true,"Satın alımlar kontrol ediliyor…");
@@ -3036,7 +3101,9 @@ function finish(){
       const onc=Object.assign({},istat);
       istat.bitti++;istatKaydet();rozetKontrol(onc);
     }
-    setTimeout(()=>$("#done").classList.add("on"),900);return;
+    setTimeout(()=>$("#done").classList.add("on"),900);
+    puanSor();
+    return;
   }
   if(!colorGroups[active].some(x=>!x.filled)){
     let n=-1;
@@ -3421,7 +3488,7 @@ window.addEventListener("resize",()=>resize());
 const pts=new Map();
 let startD=0,startS=1,startMid=null,moved=0,downT=0,downPt=null,lastTap=0;
 stage.addEventListener("pointerdown",e=>{
-  if(e.target.closest("#tools"))return;
+  if(e.target.closest("#tools,#btnUndo,#btnBul,#aim"))return;
   stage.setPointerCapture(e.pointerId);
   pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(pts.size===1){moved=0;downT=Date.now();downPt={x:e.clientX,y:e.clientY};}
