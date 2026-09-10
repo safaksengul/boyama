@@ -1155,7 +1155,7 @@ async function allItems(){
     o.cat=(remote.kmap&&remote.kmap[o.id])||o.base;
     o.hid=hiddenIds.indexOf(o.id)>=0;
     o.fresh=!!o.e&&(Date.now()-o.e)<NEW_DAYS*864e5;
-    o.kapak=(o.pct>0)?(await store.get("kap:"+o.id))||"":"";
+    o.kapak=(await store.get("kap:"+o.id))||"";
   }
   return out.filter(o=>remote.kaldir.indexOf(o.id)<0);
 }
@@ -1171,7 +1171,7 @@ function setHero(list){
   h.hidden=false;
   h.innerHTML='<img src="'+it.d+'" alt="" style="object-position:'+(it.hp||it.p||"50% 28%")+'">'+
     '<span class="veilg"></span>'+
-    '<span class="txt"><span class="tag">'+t("gunResmi")+'</span><h3>'+it.t+'</h3>'+
+    '<span class="txt"><span class="tag">'+t("gunResmi")+'</span>'+
     '<span class="go">'+t("basla")+'</span></span>';
   h.onclick=()=>loadSrc(it.d,it.id,it.prev||"",it.t);
 }
@@ -1454,6 +1454,7 @@ function openAdmin(){
     '</div>';
   document.body.appendChild(w);
 
+  let secilenKat="";
   const logSat=[];
   window.alog=(m)=>{
     const t=new Date().toLocaleTimeString("tr-TR");
@@ -1590,8 +1591,10 @@ function openAdmin(){
       });
       const nw=document.createElement("option");nw.value="__yeni";nw.textContent="＋ yeni kategori yaz";
       ks.appendChild(nw);
-      if(keep)ks.value=keep;
+      if(secilenKat)ks.value=secilenKat;
+      else if(keep)ks.value=keep;
       if(!ks.value)ks.value="__yeni";
+      secilenKat=ks.value;
       const box=w.querySelector("#aK");
       if(box)box.hidden=ks.value!=="__yeni";
     }
@@ -1601,7 +1604,8 @@ function openAdmin(){
   window.alog("panel açıldı — katalogdaki kayıt: "+draft.ekle.length);
 
   w.querySelector("#aKsel").onchange=()=>{
-    const nw=w.querySelector("#aKsel").value==="__yeni";
+    secilenKat=w.querySelector("#aKsel").value;
+    const nw=secilenKat==="__yeni";
     const box=w.querySelector("#aK");
     box.hidden=!nw;
     if(nw)box.focus();
@@ -1636,7 +1640,7 @@ function openAdmin(){
 
   /* resmi doğrudan depoya yükle */
   /* --- yeni resim: iki dosya, tek akış --- */
-  let pend={id:"",u:"",o:""};
+  let pend={id:"",u:"",o:"",veri:""};
   function pendPaint(){
     const p1=w.querySelector("#aPick"),p2=w.querySelector("#aPickP");
     p1.classList.toggle("done",!!pend.u);
@@ -1648,9 +1652,11 @@ function openAdmin(){
     if(!pend.id)pend.id="r"+Date.now().toString(36);
     return pend.id;
   }
+  let d0="";
   async function upload(f,suffix){
     const id=newId();
     const d=await shrink(f);
+    if(!suffix)d0=d;
     await store.set("admin:tok",tok());
     await ghPut(GH.dir+"/"+id+suffix+".jpg",d.split(",")[1],"resim: "+id+suffix,tok());
     return GH.site+GH.dir+"/"+id+suffix+".jpg";
@@ -1669,6 +1675,7 @@ function openAdmin(){
     busy(true,"Renkli resim yükleniyor…");
     try{
       pend.u=await upload(f,"");
+      pend.veri=d0;
       const t=w.querySelector("#aT");
       if(!t.value.trim())t.value=f.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ").slice(0,24);
       busy(false);pendPaint();toast("Renkli resim yüklendi");
@@ -1686,12 +1693,14 @@ function openAdmin(){
   w.querySelector("#aAdd").onclick=async()=>{
     if(!pend.u){toast("Önce renkli resmi seç");return;}
     if(draft.ekle.some(x=>x.id===pend.id)){toast("Bu resim zaten listede");return;}
-    const sel=w.querySelector("#aKsel").value;
+    const sel=secilenKat||w.querySelector("#aKsel").value;
     const k=(sel==="__yeni")?w.querySelector("#aK").value.trim():sel;
+    LOG("kategori: "+(k||"(boş → Diğer)"));
     const t=w.querySelector("#aT").value.trim()||"Resim";
     if(k&&draft.kategoriler.indexOf(k)<0&&!PRESETS.some(pp=>(pp.k||"Diğer")===k))draft.kategoriler.push(k);
+    if(pend.veri)await store.set("kap:r"+pend.id,pend.veri);
     draft.ekle.push({id:pend.id,t:t,k:k||"Diğer",u:pend.u,o:pend.o,kilit:false,p:"50% 25%",e:Date.now()});
-    pend={id:"",u:"",o:""};
+    pend={id:"",u:"",o:"",veri:""};d0="";
     w.querySelector("#aT").value="";
     w.querySelector("#aK").value="";
     pendPaint();paint();
@@ -1720,8 +1729,9 @@ function openAdmin(){
     files.filter(cizimMi).forEach(f=>{cizim[taban(f).replace(/-?[cç]izim$/i,"")]=f;});
     LOG("seçilen: "+files.length+" dosya | renkli: "+renkli.length+" | çizim: "+(files.length-renkli.length));
     if(!renkli.length){LOG("HATA: renkli resim yok");toast("Renkli resim seçilmedi");return;}
-    const sel=w.querySelector("#aKsel").value;
+    const sel=secilenKat||w.querySelector("#aKsel").value;
     const kat=(sel==="__yeni")?w.querySelector("#aK").value.trim():sel;
+    LOG("kategori: "+(kat||"(boş → Diğer)"));
     let ok=0,hata=0,ilkHata="";
     for(let i=0;i<renkli.length;i++){
       const f=renkli[i];
@@ -1739,6 +1749,7 @@ function openAdmin(){
           await ghPut(GH.dir+"/"+id+"-cizim.jpg",dc.split(",")[1],"çizim: "+id,tok());
           o2=GH.site+GH.dir+"/"+id+"-cizim.jpg?v="+Date.now().toString(36);
         }
+        await store.set("kap:r"+id,d);          /* Pages yayına alana kadar yerel kopya */
         draft.ekle.push({id:id,t:temizAd(f.name),k:kat||"Diğer",
                          u:GH.site+GH.dir+"/"+id+".jpg",o:o2,kilit:false,
                          p:"50% 25%",e:Date.now()});
