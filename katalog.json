@@ -565,12 +565,22 @@
     {
       "id": "askeri-01-vu9g",
       "t": "askeri 01",
-      "k": "Savaşcı",
+      "k": "Fantastik",
       "u": "https://safaksengul.github.io/boyama/resim/askeri-01-vu9g.jpg",
       "o": "https://safaksengul.github.io/boyama/resim/askeri-01-vu9g-cizim.jpg?v=mtvjvxuw",
       "kilit": false,
       "p": "50% 25%",
       "e": 1789046152232
+    },
+    {
+      "id": "uzay-17-3rh3",
+      "t": "uzay 17",
+      "k": "Fantastik",
+      "u": "https://safaksengul.github.io/boyama/resim/uzay-17-3rh3.jpg",
+      "o": "https://safaksengul.github.io/boyama/resim/uzay-17-3rh3-cizim.jpg?v=mtvk3zaz",
+      "kilit": false,
+      "p": "50% 25%",
+      "e": 1789046527355
     }
   ],
   "kaldir": []
