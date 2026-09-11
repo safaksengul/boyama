@@ -1146,6 +1146,7 @@ let tab="home";
 let hiddenIds=[];
 /* çizim tabanlı boyama motoru. false = eski motor (renkten bölge çıkarma) */
 const CIZIM_MOTORU=false;
+const KAPAK_ESIK=10;   /* kartta boyalı hâlin gösterilmesi için gereken en az yüzde */
 const NEW_DAYS=7;   /* yeni eklenen resim kaç gün "Yeni" bölümünde kalsın */
 const dayNo=()=>Math.floor((Date.now()-new Date().getTimezoneOffset()*6e4)/864e5);
 
@@ -1205,7 +1206,9 @@ async function allItems(){
     o.cat=(remote.kmap&&remote.kmap[o.id])||o.base;
     o.hid=hiddenIds.indexOf(o.id)>=0;
     o.fresh=!!o.e&&(Date.now()-o.e)<NEW_DAYS*864e5;
-    o.kapak=(o.pct>0)?((await store.get("kap:"+o.id))||""):"";
+    /* boyalı kopya ancak resmin belirgin bir kısmı boyandıysa gösterilsin,
+       yoksa kart neredeyse bembeyaz görünür */
+    o.kapak=(o.pct>=KAPAK_ESIK)?((await store.get("kap:"+o.id))||""):"";
     o.yerel=(await store.get("on:"+o.id))||"";
   }
   return out.filter(o=>remote.kaldir.indexOf(o.id)<0);
