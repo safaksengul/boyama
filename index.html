@@ -39,7 +39,7 @@
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   [hidden]{display:none!important}
-  html,body{height:100%;margin:0;overflow:hidden}
+  html,body{height:100%;margin:0;overflow:hidden;max-width:100%}
   body{background:var(--ink);color:var(--text);
     font-family:"Nunito","SF Pro Rounded",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     font-variant-numeric:tabular-nums;display:flex;flex-direction:column;user-select:none}
@@ -47,9 +47,10 @@
   /* ---------- galeri ---------- */
   #setup{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;
     padding:calc(26px + var(--safe-t)) 18px calc(22px + var(--safe-b));
-    background:radial-gradient(120% 60% at 50% 0%,#fdeede 0%,transparent 62%),var(--ink);overflow-y:auto}
-  #setup h1{display:flex;align-items:center;gap:12px;font-size:clamp(28px,8vw,40px);
-    font-weight:900;letter-spacing:-.03em;margin:0 0 2px;line-height:1}
+    background:radial-gradient(120% 60% at 50% 0%,#fdeede 0%,transparent 62%),var(--ink);
+    overflow-y:auto;overflow-x:hidden}
+  #setup h1{display:flex;align-items:center;gap:11px;font-size:clamp(24px,7vw,36px);
+    font-weight:900;letter-spacing:-.03em;margin:0;line-height:1;min-width:0;flex:1 1 auto}
   #setup .sub{margin:0 0 20px;color:var(--muted);font-size:14px;font-weight:600;line-height:1.55}
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;align-items:start}
   @media (min-width:620px){.grid{grid-template-columns:repeat(4,1fr);gap:12px}}
@@ -235,7 +236,11 @@
     font-family:inherit;font-size:15px;font-weight:800}
   .tgec{width:100%;margin-top:8px;padding:10px;background:transparent;border:0;cursor:pointer;
     color:var(--muted);font-family:inherit;font-size:13px;font-weight:600}
-  .hbtns{display:flex;align-items:center;gap:8px;flex:0 0 auto;margin-top:4px}
+  .hbtns{display:flex;align-items:center;gap:8px;flex:0 0 auto;margin-left:auto}
+  @media (max-width:600px){
+    .hbtns{width:100%;justify-content:flex-end;margin-top:10px}
+    .mark{width:50px;height:50px;border-radius:14px}
+  }
   #btnRozet,#btnHesap{width:46px;height:46px;border-radius:50%;display:flex;
     align-items:center;justify-content:center;cursor:pointer;color:var(--accent);
     background:var(--ink-2);border:1px solid var(--line);box-shadow:var(--golge);
@@ -390,8 +395,8 @@
   .sopt:active{transform:scale(.98)}
   .sopt.danger{color:#e0453c}
   .sopt.cancel{text-align:center;background:transparent;color:var(--muted);margin-top:6px}
-  .ghead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-  #btnShop{flex:0 0 auto;margin-top:4px;display:flex;align-items:center;gap:7px;
+  .ghead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  #btnShop{flex:0 0 auto;display:flex;align-items:center;gap:7px;white-space:nowrap;
     background:linear-gradient(135deg,#ffd766,#f0a91c 55%,#e08a10);
     border:0;color:#2a1c02;border-radius:99px;padding:11px 19px;font-family:inherit;
     font-size:14px;font-weight:800;cursor:pointer;position:relative;overflow:hidden;
@@ -514,13 +519,13 @@
     scrollbar-width:none;touch-action:pan-x pan-y;overscroll-behavior-x:contain;
     -webkit-overflow-scrolling:touch}
   #son::-webkit-scrollbar{display:none}
-  .sonk{position:relative;flex:0 0 auto;width:94px;height:124px;padding:0;border:0;cursor:pointer;
+  .sonk{position:relative;flex:0 0 auto;width:128px;height:170px;padding:0;border:0;cursor:pointer;
     border-radius:var(--r-m);overflow:hidden;background:#fff;box-shadow:var(--golge);
     transition:transform .28s var(--yay)}
   .sonk:active{transform:scale(.94)}
   .sonk img{width:100%;height:100%;object-fit:cover;display:block}
   .sonk .sfill{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.34);pointer-events:none}
-  .sonk b{position:absolute;left:6px;bottom:6px;font-size:10px;font-weight:800;color:#fff;
+  .sonk b{position:absolute;left:7px;bottom:7px;font-size:11px;font-weight:800;color:#fff;
     background:rgba(20,20,25,.7);border-radius:99px;padding:3px 7px}
   #tabs .geri{flex:0 0 auto;width:40px;padding:0;font-size:20px;line-height:1}
   #mineNote{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.5}
