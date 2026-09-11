@@ -1093,16 +1093,35 @@ let remote={ekle:[],kaldir:[],kats:[],kmap:{}};
 
 async function loadCatalog(){
   const cached=await store.get("cat:data");
+  const cachedTs=(await store.get("cat:ts"))||0;
   if(cached&&cached.ekle)remote=cached;
   if(!CATALOG_URL)return;
   try{
-    const ctl=new AbortController();
-    const tm=setTimeout(()=>ctl.abort(),7000);
-    const url=CATALOG_URL+(CATALOG_URL.indexOf("?")<0?"?v=":"&v=")+Date.now();
-    const r=await fetch(url,{signal:ctl.signal,cache:"no-store"});
-    clearTimeout(tm);
-    if(!r.ok)return;
-    const j=await r.json();
+    let j=null;
+    /* yöneticide katalogu doğrudan GitHub'dan oku: Pages gecikmesi yok */
+    const tok=await store.get("admin:tok");
+    if(tok){
+      try{
+        const rr=await fetch(ghUrl("katalog.json")+"?ref="+GH.branch+"&t="+Date.now(),
+                             {headers:ghHead(tok),cache:"no-store"});
+        if(rr.ok){
+          const jj=await rr.json();
+          j=JSON.parse(decodeURIComponent(escape(atob((jj.content||"").replace(/\n/g,"")))));
+        }
+      }catch(e0){}
+    }
+    if(!j){
+      const ctl=new AbortController();
+      const tm=setTimeout(()=>ctl.abort(),7000);
+      const url=CATALOG_URL+(CATALOG_URL.indexOf("?")<0?"?v=":"&v=")+Date.now();
+      const r=await fetch(url,{signal:ctl.signal,cache:"no-store"});
+      clearTimeout(tm);
+      if(!r.ok)return;
+      j=await r.json();
+      /* Pages henüz yayına almadıysa eski listeyi taze listenin üstüne yazma */
+      if((Date.now()-cachedTs)<15*60000&&cached&&cached.ekle&&
+         (j.ekle||[]).length<cached.ekle.length)return;
+    }
     const ekle=(j.ekle||[]).filter(x=>x&&x.id&&x.u&&/^https:\/\//.test(x.u)).map(x=>({
       id:"r"+String(x.id).replace(/[^\w-]/g,"").slice(0,24),
       t:String(x.t||"Resim").slice(0,40),
@@ -1675,6 +1694,7 @@ function openAdmin(){
             kaldir:draft.kaldir.slice(),kats:draft.kategoriler.slice(),
             kmap:Object.assign({},draft.kategori)};
     await store.set("cat:data",remote);
+    await store.set("cat:ts",Date.now());
     await renderGallery();
     toast("Bu cihazda uygulandı");
   };
@@ -1870,6 +1890,7 @@ function openAdmin(){
               kaldir:draft.kaldir.slice(),kats:draft.kategoriler.slice(),
               kmap:Object.assign({},draft.kategori)};
       await store.set("cat:data",remote);
+      await store.set("cat:ts",Date.now());
       await renderGallery();
       /* doğrulama: siteden değil, GitHub'ın kendisinden oku (gecikmesiz) */
       let dogru=false;
