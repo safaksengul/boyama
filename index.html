@@ -700,7 +700,7 @@ const view=$("#view"),stage=$("#stage"),ctx=view.getContext("2d");
 /* ---------- kalıcı depolama ---------- */
 /* büyük veriler (resimler, önizlemeler) tarayıcının küçük deposuna sığmıyor;
    onları sınırsız olan IndexedDB'ye yazıyoruz */
-const BUYUK=["kap:","on:","img:"];
+const BUYUK=["kap:","on:","img:","ham:"];
 const buyukMu=k=>BUYUK.some(p=>String(k).indexOf(p)===0);
 const idb=(()=>{
   let dbp=null;
@@ -1251,6 +1251,7 @@ async function allItems(){
        yoksa kart neredeyse bembeyaz görünür */
     o.kapak=(o.pct>=KAPAK_ESIK)?((await store.get("kap:"+o.id))||""):"";
     o.yerel=(await store.get("on:"+o.id))||"";
+    o.ham=(await store.get("ham:"+o.id))||"";
   }
   return out.filter(o=>remote.kaldir.indexOf(o.id)<0);
 }
@@ -1267,17 +1268,17 @@ function setHero(list){
   h.innerHTML='<img src="'+it.d+'" alt="" style="object-position:'+(it.hp||it.p||"50% 28%")+'">'+
     '<span class="veilg"></span>'+
     '<span class="txt"><span class="tag">'+t("gunResmi")+'</span></span>';
-  h.onclick=()=>loadSrc(it.d,it.id,it.prev||"",it.t);
+  h.onclick=()=>loadSrc(it.d,it.id,it.prev||"",it.t,it.ham);
   const ha=$("#heroAct");
   if(ha){
     ha.hidden=false;
     $("#btnBasla").textContent=t("basla");
-    $("#btnBasla").onclick=()=>loadSrc(it.d,it.id,it.prev||"",it.t);
+    $("#btnBasla").onclick=()=>loadSrc(it.d,it.id,it.prev||"",it.t,it.ham);
     $("#btnRastgele").onclick=()=>{
       const havuz=list.filter(x=>!x.hid&&x.pct<100&&!(x.kilit&&!acikMi(x.id)));
       if(!havuz.length)return;
       const r=havuz[Math.floor(Math.random()*havuz.length)];
-      loadSrc(r.d,r.id,r.prev||"",r.t);
+      loadSrc(r.d,r.id,r.prev||"",r.t,r.ham);
     };
   }
 }
@@ -1353,7 +1354,7 @@ async function renderGallery(){
       b.className="sonk";
       b.innerHTML='<img src="'+(it.kapak||it.prev||it.yerel||it.d)+'" alt="">'+
         '<i class="sfill" style="height:'+it.pct+'%"></i><b>%'+it.pct+'</b>';
-      b.onclick=()=>loadSrc(it.d,it.id,it.prev||"",it.t);
+      b.onclick=()=>loadSrc(it.d,it.id,it.prev||"",it.t,it.ham);
       sd.appendChild(b);
     });
   }else{
@@ -1411,7 +1412,7 @@ async function renderGallery(){
     b.onclick=e=>{
       if(e.target.classList.contains("more")){cardMenu(it);return;}
       if(kilitli){openShop(it.id);return;}
-      loadSrc(it.d,it.id,it.prev||"",it.t);
+      loadSrc(it.d,it.id,it.prev||"",it.t,it.ham);
     };
     g.appendChild(b);
   });
@@ -1809,6 +1810,7 @@ function openAdmin(){
     if(k&&draft.kategoriler.indexOf(k)<0&&!PRESETS.some(pp=>(pp.k||"Diğer")===k))draft.kategoriler.push(k);
     if(pend.onizleme||pend.veri)
       await store.set("on:r"+pend.id,pend.onizleme||pend.veri);
+    if(pend.veri)await store.set("ham:r"+pend.id,pend.veri);
     draft.ekle.push({id:pend.id,t:t,k:k||"Diğer",u:pend.u,o:pend.o,kilit:false,p:"50% 25%",e:Date.now()});
     pend={id:"",u:"",o:"",veri:"",onizleme:""};d0="";dc1="";
     w.querySelector("#aT").value="";
@@ -1832,12 +1834,20 @@ function openAdmin(){
   w.querySelector("#aFileBulk").onchange=async e=>{
     const files=[].slice.call(e.target.files);e.target.value="";
     if(!files.length)return;
-    const taban=f=>f.name.replace(/\.[^.]+$/,"").toLocaleLowerCase("tr");
-    const cizimMi=f=>/-?cizim$|-?çizim$/i.test(taban(f));
+    /* dosya adını sadeleştir: büyük/küçük harf, Türkçe harf ve ayraç farkı önemli olmasın */
+    const sade=f=>f.name.replace(/\.[^.]+$/,"").toLowerCase()
+      .replace(/ı/g,"i").replace(/İ/g,"i").replace(/ç/g,"c").replace(/Ç/g,"c")
+      .replace(/ş/g,"s").replace(/ğ/g,"g").replace(/ö/g,"o").replace(/ü/g,"u")
+      .replace(/[\s_]+/g,"-").trim();
+    const CIZ_RE=/[-_ ]?c[iı]z[iı]m$|[-_ ]?line$|[-_ ]?lineart$|[-_ ]?bw$/;
+    const taban=f=>sade(f);
+    const cizimMi=f=>CIZ_RE.test(sade(f));
     const renkli=files.filter(f=>!cizimMi(f));
     const cizim={};
-    files.filter(cizimMi).forEach(f=>{cizim[taban(f).replace(/-?[cç]izim$/i,"")]=f;});
-    LOG("seçilen: "+files.length+" dosya | renkli: "+renkli.length+" | çizim: "+(files.length-renkli.length));
+    files.filter(cizimMi).forEach(f=>{cizim[sade(f).replace(CIZ_RE,"")]=f;});
+    LOG("seçilen: "+files.length+" dosya | renkli: "+renkli.length+
+        " | çizim: "+(files.length-renkli.length));
+    renkli.forEach(f=>LOG("  "+f.name+(cizim[sade(f)]?"  ✓ çizim eşleşti":"  (çizim yok)")));
     if(!renkli.length){LOG("HATA: renkli resim yok");toast("Renkli resim seçilmedi");return;}
     const sel=secilenKat||w.querySelector("#aKsel").value;
     const kat=(sel==="__yeni")?w.querySelector("#aK").value.trim():sel;
@@ -1847,7 +1857,7 @@ function openAdmin(){
       const f=renkli[i];
       busy(true,"Yükleniyor "+(i+1)+"/"+renkli.length+"…");
       try{
-        const b=taban(f);
+        const b=sade(f);
         let id=(slug(b)||"resim")+"-"+Date.now().toString(36).slice(-4);
         if(draft.ekle.some(x=>x.id===id))id+=i;
         const d=await shrink(f);
@@ -1859,7 +1869,8 @@ function openAdmin(){
           await ghPut(GH.dir+"/"+id+"-cizim.jpg",dc.split(",")[1],"çizim: "+id,tok());
           o2=GH.site+GH.dir+"/"+id+"-cizim.jpg?v="+Date.now().toString(36);
         }
-        await store.set("on:r"+id,o2?dc0:d);    /* Pages yayına alana kadar yerel önizleme */
+        await store.set("on:r"+id,o2?dc0:d);    /* kart önizlemesi */
+        await store.set("ham:r"+id,d);         /* Pages yayına alana kadar boyanacak kopya */
         draft.ekle.push({id:id,t:temizAd(f.name),k:kat||"Diğer",
                          u:GH.site+GH.dir+"/"+id+".jpg",o:o2,kilit:false,
                          p:"50% 25%",e:Date.now()});
@@ -2619,14 +2630,14 @@ async function toggleHide(id){
 async function redo(id,name){
   if(!confirm('"'+name+'" sıfırlansın mı? Boyadıkların silinir.'))return;
   await store.del("pbn:"+id);
-  await store.del("kap:"+id);await store.del("on:"+id);
+  await store.del("kap:"+id);await store.del("on:"+id);await store.del("ham:"+id);
   renderGallery();
 }
 async function delMine(id,name){
   if(!confirm('"'+name+'" silinsin mi? Boyadıkların da silinir.'))return;
   const list=(await myList()).filter(x=>x.id!==id);
   await store.set("myimgs",list);
-  await store.del("img:"+id);await store.del("pbn:"+id);await store.del("kap:"+id);await store.del("on:"+id);
+  await store.del("img:"+id);await store.del("pbn:"+id);await store.del("kap:"+id);await store.del("on:"+id);await store.del("ham:"+id);
   renderGallery();
 }
 buildGallery();
@@ -2644,7 +2655,7 @@ async function shrink(file){
 }
 /* ---------- resim açma ---------- */
 let lineImg=null;
-function loadSrc(src,id,lineSrc,ad){
+function loadSrc(src,id,lineSrc,ad,yedek){
   curId=id||("x"+src.length);
   curAd=ad||"";
   sonEkle(curId);
@@ -2663,7 +2674,10 @@ function loadSrc(src,id,lineSrc,ad){
       li.src=lineSrc;
     }else await basla();
   };
-  im.onerror=()=>{busy(false);toast("Resim indirilemedi, bağlantını kontrol et");};
+  im.onerror=()=>{
+    if(yedek&&im.src!==yedek){im.removeAttribute("crossorigin");im.src=yedek;return;}
+    busy(false);toast("Resim indirilemedi, bağlantını kontrol et");
+  };
   im.src=src;
 }
 $("#btnRozet").innerHTML=SVG.madalya;
