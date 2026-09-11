@@ -698,21 +698,62 @@ const $=s=>document.querySelector(s);
 const view=$("#view"),stage=$("#stage"),ctx=view.getContext("2d");
 
 /* ---------- kalıcı depolama ---------- */
+/* büyük veriler (resimler, önizlemeler) tarayıcının küçük deposuna sığmıyor;
+   onları sınırsız olan IndexedDB'ye yazıyoruz */
+const BUYUK=["kap:","on:","img:"];
+const buyukMu=k=>BUYUK.some(p=>String(k).indexOf(p)===0);
+const idb=(()=>{
+  let dbp=null;
+  const ac=()=>{
+    if(dbp)return dbp;
+    dbp=new Promise((res,rej)=>{
+      try{
+        const r=indexedDB.open("numbra",1);
+        r.onupgradeneeded=()=>{r.result.createObjectStore("kv");};
+        r.onsuccess=()=>res(r.result);
+        r.onerror=()=>rej(r.error);
+      }catch(e){rej(e);}
+    });
+    return dbp;
+  };
+  const islem=(k,mod,fn)=>ac().then(db=>new Promise(res=>{
+    try{
+      const t=fn(db.transaction("kv",mod).objectStore("kv"));
+      t.onsuccess=()=>res(t.result===undefined?null:t.result);
+      t.onerror=()=>res(null);
+    }catch(e){res(null);}
+  })).catch(()=>null);
+  return {
+    get:k=>islem(k,"readonly",o=>o.get(k)),
+    set:(k,v)=>islem(k,"readwrite",o=>o.put(v,k)),
+    del:k=>islem(k,"readwrite",o=>o.delete(k))
+  };
+})();
+
 const store={
   async get(k){
     try{
+      if(buyukMu(k)){
+        const v=await idb.get(k);
+        if(v!==null&&v!==undefined)return v;
+        const eski=localStorage.getItem(k);          /* eski kayıtları taşı */
+        if(eski){const p=JSON.parse(eski);await idb.set(k,p);localStorage.removeItem(k);return p;}
+        return null;
+      }
       if(window.storage){const r=await window.storage.get(k);return r?JSON.parse(r.value):null;}
-      const v=localStorage.getItem(k);return v?JSON.parse(v):null;
+      const v2=localStorage.getItem(k);return v2?JSON.parse(v2):null;
     }catch(e){return null;}
   },
   async set(k,v){
     try{
+      if(buyukMu(k)){await idb.set(k,v);return;}
       if(window.storage)await window.storage.set(k,JSON.stringify(v));
       else localStorage.setItem(k,JSON.stringify(v));
     }catch(e){}
   },
   async del(k){
     try{
+      if(buyukMu(k)){await idb.del(k);try{localStorage.removeItem(k);}catch(e2){}return;}
       if(window.storage)await window.storage.delete(k);
       else localStorage.removeItem(k);
     }catch(e){}
@@ -4171,9 +4212,9 @@ async function kapakKaydet(){
   if(!curId||!regions.length||!img)return;
   if(doneTasks<=0)return;
   try{
-    const S=Math.min(1.4,760/Math.max(W,H));
+    const S=Math.min(1.2,640/Math.max(W,H));
     const cv=boyaliCanvas(S);
-    await store.set("kap:"+curId,cv.toDataURL("image/jpeg",.88));
+    await store.set("kap:"+curId,cv.toDataURL("image/jpeg",.86));
   }catch(e){}
 }
 function saveImage(){
