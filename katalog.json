@@ -9,7 +9,8 @@
     "Doğa",
     "Manzara",
     "Tarih",
-    "Mandala"
+    "Mandala",
+    "Kadınlar"
   ],
   "kategori": {},
   "ekle": [
@@ -682,6 +683,16 @@
       "kilit": false,
       "p": "50% 25%",
       "e": 1789147432163
+    },
+    {
+      "id": "kadin-01-74pf",
+      "t": "kadin 01",
+      "k": "Fantastik",
+      "u": "https://safaksengul.github.io/boyama/resim/kadin-01-74pf.jpg",
+      "o": "https://safaksengul.github.io/boyama/resim/kadin-01-74pf-cizim.jpg?v=mtx8793f",
+      "kilit": false,
+      "p": "50% 25%",
+      "e": 1789147456972
     }
   ],
   "kaldir": []
