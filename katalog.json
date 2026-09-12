@@ -814,6 +814,16 @@
       "kilit": false,
       "p": "50% 25%",
       "e": 1789154584576
+    },
+    {
+      "id": "motor-01-aiez",
+      "t": "motor 01",
+      "k": "Fantastik",
+      "u": "https://safaksengul.github.io/boyama/resim/motor-01-aiez.jpg",
+      "o": "https://safaksengul.github.io/boyama/resim/motor-01-aiez-cizim.jpg?v=mty4alrw",
+      "kilit": false,
+      "p": "50% 25%",
+      "e": 1789201361094
     }
   ],
   "kaldir": []
