@@ -3772,6 +3772,44 @@ function updateTools(){
        show(){ return Promise.resolve(true); } // ödül kazanıldıysa true döner
      };
    Tanımlı değilse hiçbir şey değişmez, uygulama eskisi gibi çalışır. */
+/* ---------- AdMob köprüsü (yalnızca Android kabuğunda çalışır) ----------
+   Tarayıcıda window.Capacitor olmadığı için bu blok hiç devreye girmez. */
+const ADMOB_ODUL_ID="ca-app-pub-9134132422330859/1217385842";
+(function(){
+  const C=window.Capacitor;
+  if(!C||!C.Plugins||!C.Plugins.AdMob)return;
+  const AdMob=C.Plugins.AdMob;
+  let hazir=false,hazirlaniyor=false;
+  async function hazirla(){
+    if(hazirlaniyor)return;
+    hazirlaniyor=true;
+    try{await AdMob.prepareRewardVideoAd({adId:ADMOB_ODUL_ID});hazir=true;}
+    catch(e){hazir=false;}
+    hazirlaniyor=false;
+  }
+  try{AdMob.initialize({}).then(hazirla).catch(()=>{});}catch(e){}
+  window.RewardedAd={
+    ready(){return hazir;},
+    show(){
+      return new Promise(async res=>{
+        let kazandi=false;
+        const dinleyiciler=[];
+        const ekle=async ad=>{
+          try{dinleyiciler.push(await AdMob.addListener(ad,()=>{kazandi=true;}));}catch(e){}
+        };
+        await ekle("onRewardedVideoAdReward");
+        await ekle("onRewardedVideoAdRewarded");
+        await ekle("onRewardedVideoAdDismissed");
+        try{await AdMob.showRewardVideoAd();}catch(e){}
+        dinleyiciler.forEach(d=>{try{d.remove();}catch(e){}});
+        hazir=false;
+        hazirla();
+        res(kazandi);
+      });
+    }
+  };
+})();
+
 const AD_NAME={bulb:"ipucu",bucket:"kova",bomb:"dinamit"};
 /* bir reklam karşılığı verilen miktar — istediğin gibi değiştir */
 const AD_REWARD={bulb:3,bucket:2,bomb:1};
