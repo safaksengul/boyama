@@ -3625,7 +3625,7 @@ $("#btnBul").onclick=()=>{
     const k=Math.min(1,(performance.now()-t0)/sur);
     const e=1-Math.pow(1-k,3);
     scale=s0+(s1-s0)*e;offX=x0+(x1-x0)*e;offY=y0+(y1-y0)*e;
-    render();
+    sinirla();render();
     if(k<1)requestAnimationFrame(adim);
     else{
       fx.push({t:performance.now(),d:900,kind:"outline",reg:r});
@@ -3911,6 +3911,13 @@ function drawFx(){
 
 /* ================= görünüm ================= */
 let scale=1,offX=0,offY=0,dpr=1,cssW=0,cssH=0;
+/* resmi ekranın dışına sürüklemeyi engelle: kenar boşluğu görünmesin */
+function sinirla(){
+  if(!W||!H||!cssW||!cssH)return;
+  const iw=W*scale,ih=H*scale;
+  offX=(iw<=cssW)?(cssW-iw)/2:Math.min(0,Math.max(cssW-iw,offX));
+  offY=(ih<=cssH)?(cssH-ih)/2:Math.min(0,Math.max(cssH-ih,offY));
+}
 function resize(){
   dpr=Math.min(2.5,window.devicePixelRatio||1);
   cssW=stage.clientWidth;cssH=stage.clientHeight;
@@ -3953,7 +3960,7 @@ function render(){
   if(!snap)return;
   if(!isFinite(scale)||scale<=.02){scale=Math.min(cssW/W,cssH/H)*.96||1;offX=(cssW-W*scale)/2;offY=(cssH-H*scale)/2;}
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.fillStyle="#0d0e13";ctx.fillRect(0,0,cssW,cssH);
+  ctx.fillStyle="#f3ede5";ctx.fillRect(0,0,cssW,cssH);
   const sh=shake>0?(Math.random()-.5)*10*shake:0,sv=shake>0?(Math.random()-.5)*10*shake:0;
   ctx.save();
   ctx.translate(offX+sh,offY+sv);ctx.scale(scale,scale);
@@ -4082,7 +4089,7 @@ stage.addEventListener("pointermove",e=>{
     offX+=nx-prev.x;offY+=ny-prev.y;
     moved+=Math.abs(nx-prev.x)+Math.abs(ny-prev.y);
     pts.set(e.pointerId,{x:nx,y:ny});
-    etkilesimBasla();requestRender();return;
+    sinirla();etkilesimBasla();requestRender();return;
   }
   pts.set(e.pointerId,{x:nx,y:ny});
   if(pts.size===2){
@@ -4091,7 +4098,7 @@ stage.addEventListener("pointermove",e=>{
     const ix=(startMid.x-r.left-offX)/scale,iy=(startMid.y-r.top-offY)/scale;
     scale=clamp(startS*(d/startD),.2,26);
     offX=m.x-r.left-ix*scale;offY=m.y-r.top-iy*scale;
-    moved=999;etkilesimBasla();requestRender();
+    moved=999;sinirla();etkilesimBasla();requestRender();
   }
 });
 function mid(a){return{x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2};}
@@ -4108,7 +4115,7 @@ stage.addEventListener("wheel",e=>{
   const ix=(e.clientX-r.left-offX)/scale,iy=(e.clientY-r.top-offY)/scale;
   scale=clamp(scale*(e.deltaY<0?1.12:1/1.12),.2,26);
   offX=e.clientX-r.left-ix*scale;offY=e.clientY-r.top-iy*scale;
-  etkilesimBasla();requestRender();etkilesimBitir();
+  sinirla();etkilesimBasla();requestRender();etkilesimBitir();
 },{passive:false});
 let sonYanlis=null;
 function tap(cx,cy){
